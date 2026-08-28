@@ -1,0 +1,11 @@
+# OS/editor
+.DS_Store
+*.swp
+*~
+
+# node
+node_modules/
+
+# Review bundles are generated transfer artifacts, never history.
+*.zip
+*.tar.gz

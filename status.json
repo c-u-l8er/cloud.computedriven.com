@@ -1,0 +1,348 @@
+{
+  "$comment": [
+    "THE single source for every capability claim on this site. Lane O owns this file;",
+    "lane D reports rung changes and does not edit it (agents/README.md).",
+    "",
+    "Public pages do not hand-write a rung. tools/render-status.mjs writes them into",
+    "the HTML between STATUS sentinels, and `--verify` fails the build on drift. That",
+    "is the same discipline box-and-box uses for its law count, and for the same",
+    "reason: the published number and the printed number drifted apart once already."
+  ],
+  "as_of": "2026-08-22",
+  "round": "Cloud v1 — M0 / M1-local / M1.5-local / M2 shape",
+  "deployed": false,
+  "deployment_note": "Nothing in this round is deployed. No Cloudflare account, no Fly app, no Hetzner box, no PlanetScale database has been provisioned by this work. Spend needs Travis (agents/C-infrastructure.md).",
+  "$battery_comment": [
+    "Counts live here, not in prose. security.html renders them between STATUS:battery",
+    "sentinels. They were hand-typed on that page for exactly one day and were already",
+    "wrong when the battery grew from 40 checks to 55.",
+    "Re-measure with the two commands below and update this block; never edit the page."
+  ],
+  "battery": {
+    "command": "./worker/test/tenant-isolation.sh",
+    "control_command": "CD_SABOTAGE=1 ./worker/test/tenant-isolation.sh",
+    "as_of": "2026-08-25",
+    "total": 196,
+    "normal_passed": 196,
+    "normal_failed": 0,
+    "sabotage_passed": 186,
+    "sabotage_failed": 10,
+    "regression_removed": "0008 + 0009 + 0010 + 0011 + 0014 + 0016 + 0017 + 0018 + 0019 + 0020 + 0021 + 0022 + 0023 + 0024 + 0025 + 0026 + 0027",
+    "regression_failed": 120,
+    "worker_command": "npm test --prefix worker",
+    "worker_tests": 486,
+    "worker_failed": 0,
+    "worker_mutation_command": "./worker/test/sabotage.sh",
+    "worker_mutations_total": 139,
+    "worker_mutations_caught": 139,
+    "migrations": 27,
+    "worker_mutations_missed": 0,
+    "concurrency_passed": 34,
+    "concurrency_failed": 0,
+    "$regression_note": "The withheld set is the fixes under test PLUS everything that cannot APPLY without them. 0014 creates computedriven_ledger, and 0016/0017 are owned by it; 0018 re-grants EXECUTE on functions those files create. A set missing any of them aborts at migration time -- which the counts script reports LOUDLY rather than publishing a number from a run that reached no checks. Round 7 hit that twice, and round 4 of M2.0 hit it once more: 0026 was added to the tree and not to this list, so the reduced set tried to ALTER cd.storage_objects with no 0021 to create it.",
+    "concurrency_command": "./worker/test/concurrency.sh",
+    "concurrency_controls": "CD_SABOTAGE=lock · CD_SABOTAGE=quota · CD_SABOTAGE=offer · CD_SABOTAGE=observe",
+    "pg_major_tested": 17,
+    "pg_supported_by_hyperdrive": "9.0-17.x",
+    "pg_note": "R33: Pigsty targets 17.x because Hyperdrive documents 9.0-17.x. 17.10 is installed and the battery now runs on it by default; pg_major_tested is DERIVED from the battery banner, not typed. Set CD_PGBIN to aim it elsewhere.",
+    "normal_warned": 0,
+    "concurrency_controls_command": "CD_SABOTAGE=<mode> ./worker/test/concurrency.sh — each must report CAUGHT for its own group and leave the other two untouched",
+    "concurrency_controls_caught": 4,
+    "falsifier_cases": 16,
+    "falsifier_order": "S -> Q -> P -> P2 -> H -> A -> D -> D2 -> F -> G -> I -> B -> C -> E -> J -> N",
+    "concurrency_controls_total": 4,
+    "prose_command": "node scripts/check-status-prose.mjs"
+  },
+  "rungs": {
+    "spec": "Written down. No code.",
+    "local": "Implemented, and its tests run on a developer machine.",
+    "staged": "Deployed somewhere non-public.",
+    "live": "Serving the public."
+  },
+  "capabilities": [
+    {
+      "key": "pigsty_schema",
+      "label": "Pigsty schema + migrations",
+      "rung": "local",
+      "note": "Applies clean, with a working negative control and a regression proof. THE VERSION IT WAS MEASURED ON IS A FACT ABOUT THE RUN, NOT ABOUT THIS SENTENCE: the battery block below records the migration count, the PostgreSQL major it ran against, and whether anything warned. R33 targets 17.x because Hyperdrive documents known support for 9.0-17.x, and the batteries now default to the target build when it is installed rather than to whatever the box happens to have. This note used to carry its own copy of all three numbers and went stale while every gate stayed green -- scripts/check-status-prose.mjs is why it cannot again.",
+      "evidence": "worker/migrations/ · ./worker/test/tenant-isolation.sh"
+    },
+    {
+      "key": "tenant_isolation",
+      "label": "Tenant isolation (fail-closed RLS)",
+      "rung": "local",
+      "note": "Clean, with a working negative control and a regression proof against migrations 0008-0010 removed. Counts in the battery block.",
+      "evidence": "./worker/test/tenant-isolation.sh · CD_SABOTAGE=1 for the control"
+    },
+    {
+      "key": "function_acl",
+      "label": "Function-level privilege separation",
+      "rung": "local",
+      "note": "PUBLIC holds EXECUTE on nothing; only the api role may call a resolver. Fixed after a review found readonly could mint principals.",
+      "evidence": "worker/migrations/0009_function_acl.sql · battery D12-D17"
+    },
+    {
+      "key": "principal_status",
+      "label": "Principal / organization suspension",
+      "rung": "local",
+      "note": "suspended and closed now refuse by name. They were decorative until 2026-08-21.",
+      "evidence": "worker/migrations/0008_principal_status.sql · battery group G"
+    },
+    {
+      "key": "identity_mapping",
+      "label": "OIDC subject → principal → organization",
+      "rung": "local",
+      "note": "Resolvers are implemented and tested, and idempotent under CONCURRENCY as well as in sequence. The mechanism CHANGED this round: 0013 used a PostgreSQL advisory lock, which Hyperdrive lists as unsupported — correct PostgreSQL that the production wire refuses. 0015 serializes on the unique partial index instead. No Keycloak has issued a real token to them.",
+      "evidence": "worker/migrations/0015_provider_safe_identity.sql · battery groups F and L · ./worker/test/concurrency.sh group N"
+    },
+    {
+      "key": "cloud_site",
+      "label": "Marketing + status surface",
+      "rung": "local",
+      "note": "These pages. Built, not served.",
+      "evidence": "cloud.computedriven.com/"
+    },
+    {
+      "key": "keycloak_realm",
+      "label": "Keycloak realm on Fly",
+      "rung": "spec",
+      "note": "Ruled (R4) to Fly iad, database on PlanetScale. Not provisioned.",
+      "evidence": "agents/C-infrastructure.md §3"
+    },
+    {
+      "key": "hyperdrive_link",
+      "label": "Worker → Pigsty over Hyperdrive",
+      "rung": "spec",
+      "note": "Ruled (R7). No binding exists; the schema has only ever been reached over a local socket.",
+      "evidence": "CLOUD_V1.md §3"
+    },
+    {
+      "key": "token_verification",
+      "label": "OIDC token verification (RS256, pinned)",
+      "rung": "local",
+      "note": "Algorithm pinned, never read from the token; iat required, crit refused, forced JWKS refresh rate-capped. No realm has issued it a real token.",
+      "evidence": "worker/src/jwt.mjs · worker/test/jwt.test.mjs"
+    },
+    {
+      "key": "tenant_context_helper",
+      "label": "Transaction-entry tenant context",
+      "rung": "local",
+      "note": "Context is established on entering the transaction. The brand proves a tenant was minted by deriveTenant() and not hand-built — it does NOT prove the id came from a successful authentication, since deriveTenant() is exported and trusted code could misuse it.",
+      "evidence": "worker/src/tenant.mjs · worker/test/worker.test.mjs"
+    },
+    {
+      "key": "credential_scoping",
+      "label": "R2 credential scope computation",
+      "rung": "local",
+      "note": "The prefix is BUILT from the organization id rather than validated against it, so no argument combination reaches another tenant. A scope also carries an unforgeable provenance brand: grantForScope() used to accept any object with a string `prefix`, so a hand-built whole-bucket scope produced a signable grant.",
+      "evidence": "worker/src/r2creds.mjs"
+    },
+    {
+      "key": "credential_minting",
+      "label": "Minting real R2 credentials",
+      "rung": "spec",
+      "note": "The scope logic is local; the provider is not. No bucket, no account. FakeR2Provider is the only implementation and its keys say so.",
+      "evidence": "worker/src/r2creds.mjs R2Provider · agents/D-worker-auth.md"
+    },
+    {
+      "key": "role_derived_authority",
+      "label": "Server-derived object permission",
+      "rung": "local",
+      "note": "The client requests an operation; ROLE and WORLD STATUS decide what it may become. A viewer asking to write is refused, not downgraded. Entitlement and quota are now part of the decision too — a write permission requires a storage admission (R24).",
+      "evidence": "worker/migrations/0010_membership_role.sql · worker/src/authz.mjs permissionFor()"
+    },
+    {
+      "key": "stable_org_identity",
+      "label": "Organizations resolved by stable IdP id",
+      "rung": "local",
+      "note": "Alias is for selection only. A token carrying aliases without ids is refused as a realm misconfiguration.",
+      "evidence": "worker/src/authz.mjs organizationEntries() · battery group F"
+    },
+    {
+      "key": "column_authority",
+      "label": "Column-level authority on mutable tables",
+      "rung": "local",
+      "note": "0011 granted table-wide UPDATE on memberships while its own comment said last-seen only; a viewer promoted itself to owner. Authority-bearing columns are now separately granted.",
+      "evidence": "worker/migrations/0012_column_authority.sql · battery group J · CD_SABOTAGE=columns"
+    },
+    {
+      "key": "append_only_history",
+      "label": "Append-only world versions and audit",
+      "rung": "local",
+      "note": "0004 called world_versions immutable while 0007 granted UPDATE and DELETE on it. Now enforced by the verb matrix, proven by attempting the write and witnessing the row survived.",
+      "evidence": "worker/migrations/0011_verb_matrix.sql · battery group I · CD_SABOTAGE=verbs"
+    },
+    {
+      "key": "claims_immutability",
+      "label": "Verified claims are frozen, not just branded",
+      "rung": "local",
+      "note": "The brand proved an object WAS ONCE verified; mutating it kept the brand. Deep-frozen before branding, including the nested organization claim.",
+      "evidence": "worker/src/jwt.mjs deepFreeze() · battery"
+    },
+    {
+      "key": "composition_testing",
+      "label": "Entrypoint composition battery",
+      "rung": "local",
+      "note": "Drives the real fetch handler, not modules. Exists because a JWKS rate-cap that passed its own module test did not hold at the entrypoint.",
+      "evidence": "worker/test/entrypoint.test.mjs"
+    },
+    {
+      "key": "verified_claims_provenance",
+      "label": "Unforgeable verified-claims brand",
+      "rung": "local",
+      "note": "verifyToken brands its result in a module-private WeakSet. Nothing exported can add to it, so a structural clone of verified claims is still refused.",
+      "evidence": "worker/src/jwt.mjs assertVerified()"
+    },
+    {
+      "key": "provider_conformance",
+      "label": "Provider authority may not exceed scope",
+      "rung": "local",
+      "note": "Two laws, not one: no widening (safety) AND no under-granting (functionality). Checked against the PROVIDER-NATIVE grant through a declared translation table, because comparing R2's action names to ComputeDriven's directly made a correct R2 adapter fail its own law. Closed vocabulary: an action R2 does not define is refused as unknown. No provider is bound to it yet.",
+      "evidence": "worker/src/r2creds.mjs assertRefines() · worker/src/r2native.mjs · worker/test/r2native.test.mjs"
+    },
+    {
+      "key": "storage_admission",
+      "label": "Entitlement + storage quota admission",
+      "rung": "local",
+      "note": "M1.5 (R24). Entitlement, a two-number byte ledger, and an expiring reservation with exactly-once finalize/abort/expiry. Admission is ONE statement: 20 simultaneous 100-byte requests against a 1000-byte limit admit exactly 10. Round 7 made it REQUEST-idempotent rather than merely accounting-idempotent (four concurrent retries all succeed with one reservation and zero errors), moved authority checks ABOVE replay, and bound the idempotency key to the whole request tuple. It is admission-safe and NOT hard-quota-safe — see byte_enforced_quota.",
+      "evidence": "worker/migrations/0014 + 0016 · worker/src/admission.mjs · battery group K · concurrency.sh group P"
+    },
+    {
+      "key": "jwks_durable_ratelimit",
+      "label": "Cross-request JWKS refresh admission",
+      "rung": "spec",
+      "note": "The module-scope cache is best-effort in-isolate only. A durable limit needs a cross-request mechanism and is NOT claimed.",
+      "evidence": "worker/src/index.mjs jwksFor()"
+    },
+    {
+      "key": "worker_api",
+      "label": "Control-plane API surface",
+      "rung": "spec",
+      "note": "Routes and refusal mapping exist and parse, and the credential route now takes the world lookup and the storage reservation in ONE transaction. connect() throws by design — no Hyperdrive driver adapter has been written.",
+      "evidence": "worker/src/index.mjs · worker/wrangler.toml"
+    },
+    {
+      "key": "portal_login",
+      "label": "Portal sign-in (BFF, server session)",
+      "rung": "spec",
+      "note": "No portal exists.",
+      "evidence": "CLOUD_V1.md §4 M1"
+    },
+    {
+      "key": "world_sync",
+      "label": "World sync — chunk, hash, upload",
+      "rung": "spec",
+      "note": "M2. The WRITE SHAPE is decided (R31 work): one bounded content-addressed chunk, one reservation, one EXACT object key, one short-lived artifact — so the session can last days while each grant lasts minutes. Multipart is NOT authorized; the claim that M2 would need it is retracted, because a 2 TB world is not a 2 TB object. No chunking implementation exists.",
+      "evidence": "CLOUD_V1.md §6.6 · worker/migrations/0017 · worker/src/r2native.mjs"
+    },
+    {
+      "key": "restore",
+      "label": "Restore onto a second machine",
+      "rung": "spec",
+      "note": "M2. R23 is RULED: machine authority is NOT restored — data access is separately reacquired through a client-held User Recovery Key that unwraps the World Data Key. Revocation governs future Cloud access; it is not retroactive erasure, and we say so.",
+      "evidence": "CLOUD_V1.md §6.2b · REVISION_REGISTER.md R23"
+    },
+    {
+      "key": "device_enrollment",
+      "label": "Super node identity + Fleet + revoke",
+      "rung": "spec",
+      "note": "M3.",
+      "evidence": "CLOUD_V1.md §4"
+    },
+    {
+      "key": "placement",
+      "label": "LOCAL / FLEET placement",
+      "rung": "spec",
+      "note": "M4.",
+      "evidence": "CLOUD_V1.md §4"
+    },
+    {
+      "key": "hosted_provisioning",
+      "label": "ComputeDriven-hosted capacity (Hetzner)",
+      "rung": "spec",
+      "note": "M5. No paid infrastructure has been provisioned.",
+      "evidence": "CLOUD_V1.md §4"
+    },
+    {
+      "key": "remote_execution",
+      "label": "Remote execution on a node",
+      "rung": "spec",
+      "note": "A Cloud request is a request. The local runtime verifies and may refuse.",
+      "evidence": "CLOUD_V1.md §7"
+    },
+    {
+      "key": "billing",
+      "label": "Commerce — checkout, payment, subscriptions",
+      "rung": "spec",
+      "note": "M6, and now ONLY commerce. Entitlement and quota are authorization and moved ahead of M2 (R24); they are built and local — see storage_admission. What is missing here is checkout, payment and subscription lifecycle, plus the metered compute SKU that a storage tier cannot absorb.",
+      "evidence": "CLOUD_V1.md §5"
+    },
+    {
+      "key": "trvm_governed",
+      "label": "TRVM-governed Cloud transitions",
+      "rung": "spec",
+      "note": "TRVM P4 is proven in its own tree and is wired to nothing here. Cloud behaviour is Postgres and application convention, and is called that.",
+      "evidence": "TRVM/governance/round-11-ledger.md"
+    },
+    {
+      "key": "capability_refinement",
+      "label": "ComputeDriven → provider action translation",
+      "rung": "local",
+      "note": "The translation is a declared table checked in BOTH directions against a closed provider vocabulary, so a correct R2 grant (ListObjectsV1 + ListObjectsV2 for one ComputeDriven ListObjects) conforms and half of one is refused as an under-grant. R2's own words were verified first-party against Cloudflare's documentation, not recalled.",
+      "evidence": "worker/src/r2native.mjs · worker/test/r2native.test.mjs"
+    },
+    {
+      "key": "concurrent_correctness",
+      "label": "Concurrency battery (two real sessions)",
+      "rung": "local",
+      "note": "A separate battery, because tenant-isolation.sh runs one session on one connection and every property it can express is sequential. Hand-steps two sessions to a deterministic interleaving rather than racing and hoping, and judges its sabotage modes PER GROUP so a control that fires for the wrong reason reports MISDIRECTED.",
+      "evidence": "./worker/test/concurrency.sh · CD_SABOTAGE=lock · CD_SABOTAGE=quota"
+    },
+    {
+      "key": "derived_status_numbers",
+      "label": "status.json battery numbers are derived, not typed",
+      "rung": "local",
+      "note": "Runs all five battery invocations and refuses to agree with a stale number. Exists because this file said “10 migrations” against a tree of twelve, and published a sabotage control (66/8) and a regression proof (28) from four migrations earlier — control results nobody re-runs casually are the ones that go stale. The RUNGS were already generated into the pages by tools/render-status.mjs --verify; this covers the counts, which were not.",
+      "evidence": "scripts/cloud-status-counts.mjs · cloud.computedriven.com/tools/render-status.mjs --verify"
+    },
+    {
+      "key": "provider_transport_compat",
+      "label": "Request path is Hyperdrive-compatible",
+      "rung": "local",
+      "note": "Battery group L asks the DATABASE which functions the API role may execute and reads their bodies, so advisory locks, LISTEN/NOTIFY and PREPARE/DEALLOCATE on the request path fail a check rather than a deployment. Exists because a ruled fix went green locally and Hyperdrive refuses the mechanism it used. It proves the schema is compatible; it CANNOT prove Hyperdrive accepts it — that needs a real binding.",
+      "evidence": "./worker/test/tenant-isolation.sh group L · worker/test/live-falsifier.mjs cases F, G, H"
+    },
+    {
+      "key": "upload_intent",
+      "label": "Object-scoped write authority (M2 shape)",
+      "rung": "local",
+      "note": "One exact object key, not a prefix: a credential for .../chunk/abc cannot reach .../chunk/def. PutObject only. The intent carries expected bytes and a content digest and cannot over-commit its reservation CONCURRENTLY -- serialized on the reservation row with FOR UPDATE, the same lock finalize_storage() and abort_storage() have taken since 0014. An object key binds the whole promise {reservation, key, bytes, digest} (R43). THE STATE MACHINE IS THREE STATES AND ONE IS TERMINAL: offered, observed, client_abandoned. `observed` is provider truth and no local transition may walk it back (R54); `client_abandoned` is a DECLARATION that releases nothing, because abandoning a row in our database does not revoke a presigned URL already in the clients hands (R55). Only the reservation dying releases bytes, which is why the byte arithmetic has no state predicate at all.",
+      "evidence": "worker/migrations/0019 + 0022 · concurrency groups Q and R · CD_SABOTAGE=offer · CD_SABOTAGE=observe"
+    },
+    {
+      "key": "provider_observation",
+      "label": "Provider-observed storage accounting (R32)",
+      "rung": "local",
+      "note": "R32 is PROPOSED, not ruled, and is built anyway so it can be ruled with a number. THREE THINGS EARLIER ROUNDS GOT WRONG HERE. The consumer was UNREACHABLE -- it runs as computedriven_ledger and cd.organizations had no policy admitting that role, so every event including every valid one was refused (measured: count returns 0 with a row present). An append-only log is not an inventory (R41): R2 fires object-create on OVERWRITE, so summing the log charged a replaced body twice. And the queue consumer sat OUTSIDE the lock protocol, so a provider observation could be overwritten by a request-path replay -- measured, group R: fresh write authority handed out for an object R2 already held. DELIVERY identity is the queue message id, read from the ENVELOPE so a producer cannot choose it; (bucket, key) is object identity; etag and event_time are object state (R57). PROVIDER-EVENT identity is not exposed at all -- R2's notification body carries account, action, bucket, object and eventTime and no event id -- so what we have is exactly-once processing of a queue MESSAGE, and this note called that 'event identity' for a day after R57 was narrowed. Still runs against FIXTURE events -- no bucket, no queue, no notification rule.",
+      "evidence": "worker/migrations/0021 + 0022 · worker/src/reconcile.mjs · battery groups M and O · concurrency group R"
+    },
+    {
+      "key": "byte_enforced_quota",
+      "label": "Provider-enforced byte ceiling on a write credential (R31)",
+      "rung": "spec",
+      "note": "OPEN, AND DELIBERATELY NOT CLAIMED. R2 temporary credentials constrain bucket, operations, prefixes/objects and TTL and document no maximum byte count; presigned URLs document Content-Type as signed and ENFORCED and say nothing about Content-Length. So reserving 1 MB does not stop R2 accepting 500 MB — the database refusal at finalize is correct and too late. THE EXPERIMENT HAS BEEN RE-AIMED: the S3-compatibility page documents neither Content-Length nor x-amz-checksum-sha256 for PutObject, so the old case B would have measured our header choice rather than R2. It does document Content-MD5, which binds CONTENT and is strictly stronger than a byte ceiling — a bound digest refuses a longer body, a shorter body and a same-length different body alike. Two questions hide in one: does the signature bind the header, and does R2 verify the digest against the body.",
+      "evidence": "CLOUD_V1.md §6.5 · worker/test/live-falsifier.mjs case B"
+    },
+    {
+      "key": "live_falsifier",
+      "label": "Live-provider falsifier (plan only)",
+      "rung": "spec",
+      "note": "Questions no local test can answer — see falsifier_cases for how many — each written down with what it would falsify and what we would do about it BEFORE it is run, so a negative result stays informative instead of becoming something to explain away. It PROVISIONS NOTHING and refuses to run without real bindings. Creating the account, bucket and queue is a spend decision. The count is DERIVED as of round 7.3: this note said “Eight” against an array of nine for a full round, and the prose gate could not see it because a fact that lives only in prose has nothing to disagree with.",
+      "evidence": "worker/test/live-falsifier.mjs --plan"
+    }
+  ],
+  "$prose_exemptions": [
+    "Runs all five battery invocations and refuses to agree with a stale number. Exists because this file said “10 migrations” against a tree of twelve, and published a sabotage control (66/8) and a regression proof (28) from four migrations earlier — control results nobody re-runs casually are the ones that go stale. The RUNGS were already generated into the pages by tools/render-status.mjs --verify; this covers the counts, which were not."
+  ],
+  "$prose_exemptions_note": "Strings that LOOK like a stale derived fact and are HISTORY. Exempted by exact match so each one is visible and deliberate; a sweep that updated these would be rewriting a true account of a past defect into a false one. Checked by scripts/check-status-prose.mjs."
+}

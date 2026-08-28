@@ -1,0 +1,614 @@
+/* cloud.computedriven.com — shares computedriven.com's tokens verbatim so the
+   two read as one property. Fonts are self-hosted there for a reason the root
+   site states; this surface inherits the same files. */
+
+/* Same two variable woff2 files the root site self-hosts, same reason: a page
+   arguing for machines you control should not fetch from one you do not.
+   `font-weight: 400 700` is what makes a single variable file cover the range —
+   declaring one weight silently flattens every bold on the page. */
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("/fonts/space-grotesk.woff2") format("woff2");
+}
+@font-face {
+    font-family: "JetBrains Mono";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("/fonts/jetbrains-mono.woff2") format("woff2");
+}
+
+:root {
+    --bg: #03040a;
+    --surface: #0a0c14;
+    --surface-2: #10131d;
+    --border: rgba(242, 193, 78, 0.14);
+    --border-soft: rgba(255, 255, 255, 0.07);
+    --text: #e8e6e0;
+    --dim: #8d8b9c;
+    --muted: #4a4859;
+    --amber: #f2c14e;
+    --cyan: #2de2e6;
+    --bronze: #a8763e;
+    --red: #ff5c5c;
+    --sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --max-w: 1080px;
+    --gutter: clamp(1.25rem, 4vw, 3rem);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── the site header ────────────────────────────────────────────────────────
+   Sticky, and deliberately so. amp-nav's _offsetHostFixedNavs() pushes the
+   host site's own bar below the portfolio bar by setting `top`, and it only
+   touches elements whose COMPUTED position is `fixed` or `sticky` — `top` is a
+   no-op on static boxes and would shift a relative one out of place. A static
+   header here would look right at first paint and then be overlapped the
+   instant amp-nav mounts. */
+header.site {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(3, 4, 10, 0.82);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-soft);
+}
+.site-bar {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 var(--gutter);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2.4vw, 1.5rem);
+}
+/* The logo points at the root domain, not at `/` — the three product sites funnel
+   back to the studio, and "Overview" one link along is already the way back to
+   this site's own front page. The suffix is what keeps the visible label honest
+   about the destination; the aria-label carries it at every width, because the
+   suffix collapses on narrow screens and an accessible name reading "[World]
+   Cloud" on a link that leaves the domain is the actual defect. */
+.site-logo {
+    flex: none;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+    text-decoration: none;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.site-logo b {
+    color: var(--amber);
+}
+.site-logo:hover {
+    color: var(--text);
+}
+.site-logo:hover b {
+    color: var(--cyan);
+}
+.site-logo .bto {
+    font-weight: 400;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    transition: color 0.18s ease;
+}
+.site-logo:hover .bto {
+    color: var(--amber);
+}
+@media (max-width: 860px) {
+    .site-logo .bto-w {
+        display: none;
+    }
+}
+
+/* The links scroll inside the bar on a narrow screen rather than wrapping it
+   to two rows or pushing the auth control off the right edge. */
+.site-links {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.7rem, 2.2vw, 1.5rem);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.site-links::-webkit-scrollbar {
+    display: none;
+}
+.site-links a {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.site-links a:hover {
+    color: var(--text);
+}
+.site-links a[aria-current="page"] {
+    color: var(--amber);
+}
+
+.site-auth {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.55em 0.9em;
+    white-space: nowrap;
+}
+.site-auth:hover,
+.site-auth[aria-current="page"] {
+    border-color: var(--amber);
+    color: var(--amber);
+}
+/* The rung tag beside "Sign in" is written by tools/render-status.mjs from
+   status.json — never typed. When portal sign-in leaves `spec` the renderer
+   stops emitting it and the control becomes a plain CTA on every page at once. */
+.site-auth .tag {
+    font-size: 0.85em;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-left: 1px solid var(--border-soft);
+    padding-left: 0.65em;
+}
+.site-auth:hover .tag {
+    color: inherit;
+}
+
+main {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 var(--gutter) 6rem;
+}
+
+section {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem);
+    border-top: 1px solid var(--border-soft);
+}
+section:first-of-type {
+    border-top: 0;
+}
+
+h1,
+h2,
+h3 {
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0 0 0.6em;
+}
+h1 {
+    font-size: clamp(2.4rem, 1.4rem + 4.4vw, 4.5rem);
+    font-weight: 700;
+}
+h2 {
+    font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2.1rem);
+}
+h3 {
+    font-size: 1.15rem;
+    color: var(--amber);
+}
+p {
+    margin: 0 0 1.1em;
+    max-width: 68ch;
+}
+
+a {
+    color: var(--cyan);
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+}
+a:hover {
+    color: var(--amber);
+}
+:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+}
+
+code,
+kbd {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    color: var(--dim);
+}
+
+.lede {
+    font-size: clamp(1.1rem, 1rem + 0.6vw, 1.4rem);
+    color: var(--dim);
+    max-width: 60ch;
+}
+.thesis {
+    color: var(--amber);
+}
+.dim {
+    color: var(--dim);
+}
+
+/* the honest banner. Amber, not red: this is the system telling the truth
+   about itself, which is the system working. */
+.banner {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    background: var(--surface);
+    padding: 1rem 1.15rem;
+    border-radius: 3px;
+    font-size: 0.95rem;
+    color: var(--dim);
+    max-width: 68ch;
+}
+.banner strong {
+    color: var(--text);
+}
+.banner b {
+    color: var(--amber);
+    font-weight: 600;
+}
+
+/* ASCII figures. Every one scrolls inside itself so the page body never does. */
+figure.fig {
+    margin: 1.75rem 0;
+    border: 1px solid var(--border-soft);
+    background: var(--surface);
+    border-radius: 3px;
+    overflow: hidden;
+}
+figure.fig pre {
+    margin: 0;
+    padding: 1.25rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: clamp(0.66rem, 0.55rem + 0.4vw, 0.8rem);
+    line-height: 1.5;
+    color: var(--dim);
+    tab-size: 4;
+}
+figure.fig figcaption {
+    padding: 0.6rem 1.25rem;
+    border-top: 1px solid var(--border-soft);
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    padding: 0;
+    margin: 1.75rem 0;
+    list-style: none;
+}
+.card {
+    border: 1px solid var(--border-soft);
+    background: var(--surface);
+    border-radius: 3px;
+    padding: 1.1rem 1.2rem;
+}
+.card h3 {
+    margin-bottom: 0.35em;
+    font-size: 1rem;
+}
+/* A linked card heading stays a heading. Without this it inherits link cyan and
+   the grid reads as a row of links rather than a row of cards. */
+.card h3 a {
+    color: inherit;
+    text-decoration-color: var(--muted);
+}
+.card h3 a:hover {
+    color: var(--cyan);
+    text-decoration-color: currentColor;
+}
+.card p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--dim);
+}
+
+/* the family band — the same three cards, in the same order and the same words,
+   ship on all three product sites and in the root's funnel figure, so a reader
+   crossing between them recognises the shape rather than re-learning it. The card
+   for the site you are already on is a <div>, not an <a>: a link to the page you
+   are on is a link that does nothing, and marking it "you are here" while still
+   making it clickable is worse than either. */
+.fam {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14.5rem), 1fr));
+    gap: 1rem;
+    margin: 1.75rem 0 0;
+}
+.fam-card {
+    display: block;
+    text-decoration: none;
+    border: 1px solid var(--border-soft);
+    background: var(--surface);
+    border-radius: 3px;
+    padding: 1.1rem 1.2rem;
+    transition:
+        border-color 0.18s ease,
+        background 0.18s ease;
+}
+a.fam-card:hover {
+    border-color: var(--cyan);
+    background: var(--surface-2);
+}
+.fam-card .fc-n {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+}
+.fam-card .fc-d {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--dim);
+    margin-top: 0.32rem;
+}
+.fam-card .fc-h {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 0.55rem;
+}
+.fam-card.here {
+    border-color: rgba(242, 193, 78, 0.45);
+    background: var(--surface-2);
+}
+.fam-card.here .fc-n {
+    color: var(--amber);
+}
+.fc-you {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    border: 1px solid rgba(242, 193, 78, 0.4);
+    border-radius: 3px;
+    padding: 0.08rem 0.4rem;
+}
+.fam-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.9rem;
+    margin: 1.2rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-soft);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    max-width: none;
+}
+.fam-foot a {
+    color: var(--amber);
+}
+.fam-foot a:hover {
+    color: var(--cyan);
+}
+
+/* tables — wide content scrolls in its own container */
+.scroll {
+    overflow-x: auto;
+    margin: 1.75rem 0;
+    border: 1px solid var(--border-soft);
+    border-radius: 3px;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 40rem;
+    font-size: 0.9rem;
+}
+table caption {
+    text-align: left;
+    padding: 0.9rem 1rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+th,
+td {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+}
+thead th {
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+}
+tbody th {
+    font-weight: 500;
+    color: var(--text);
+}
+td.num {
+    font-family: var(--mono);
+    text-align: right;
+}
+tbody tr:last-child th,
+tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.rung {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15em 0.5em;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+.rung-live {
+    color: var(--cyan);
+}
+.rung-staged {
+    color: var(--bronze);
+}
+.rung-local {
+    color: var(--amber);
+}
+.rung-spec {
+    color: var(--muted);
+}
+
+.legend {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    align-items: baseline;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+}
+.legend dt {
+    justify-self: start;
+}
+.legend dd {
+    margin: 0;
+    color: var(--dim);
+}
+
+nav.pages {
+    border-top: 1px solid var(--border-soft);
+    padding: 1.5rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.92rem;
+}
+nav.pages [aria-current="page"] {
+    color: var(--amber);
+    text-decoration: none;
+}
+
+footer {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 2rem var(--gutter) 4rem;
+    border-top: 1px solid var(--border-soft);
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+footer p {
+    max-width: 68ch;
+}
+
+/* The same four-way row is in the footer of all three product sites and the root,
+   so the way out is in the same place wherever a reader stops. The property you
+   are on is a <b>, not an <a> — see the note on .fam-card. This sits OUTSIDE the
+   STATUS: markers on purpose: render-status.mjs rewrites what is between them. */
+.foot-fam {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    align-items: baseline;
+    margin-top: 1.4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border-soft);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+}
+.foot-fam .ff-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1rem;
+}
+.foot-fam .ff-links b {
+    font-weight: 400;
+    color: var(--amber);
+}
+.foot-fam .ff-links a {
+    color: var(--dim);
+    text-decoration: none;
+}
+.foot-fam .ff-links a:hover {
+    color: var(--amber);
+}
+
+/* The foot of every page ends at the same door. The line under it is generated
+   from status.json for the same reason the header tag is: a footer repeated on
+   six pages is six places for one fact to go stale. */
+.foot-auth {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem 1.1rem;
+    margin: 0 0 1.5rem;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    border-radius: 3px;
+    background: var(--surface);
+}
+.foot-auth .foot-auth-cta {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.5em 0.9em;
+    white-space: nowrap;
+}
+.foot-auth .foot-auth-cta:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+}
+.foot-auth .foot-auth-note {
+    flex: 1 1 20ch;
+    margin: 0;
+    color: var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}

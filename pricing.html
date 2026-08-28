@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pricing — [World] Cloud</title>
+        <meta
+            name="description"
+            content="Driver $6, Fleet $19, Factory $69. These buy persistence, sync, restore and fleet control — they do not include a virtual machine. Nothing is purchasable yet, and the page says so."
+        />
+        <link rel="canonical" href="https://cloud.computedriven.com/pricing" />
+        <link rel="stylesheet" href="/assets/site.css" />
+    </head>
+    <body>
+        <header class="site">
+            <div class="site-bar">
+                <a class="site-logo" href="https://computedriven.com" aria-label="ComputeDriven — the studio [World] Cloud is one of three properties of"><b>[World]</b> Cloud<span class="bto" aria-hidden="true">&#8599;</span><span class="bto bto-w" aria-hidden="true">computedriven.com</span></a>
+                <nav class="site-links" aria-label="Primary">
+                    <a href="/">Overview</a>
+                    <a href="/architecture">Architecture</a>
+                    <a href="/security">Security</a>
+                    <a href="/pricing" aria-current="page">Pricing</a>
+                    <a href="/status">Status</a>
+                </nav>
+                <!-- STATUS:authcta:BEGIN -->
+<a class="site-auth" href="/auth">Sign in <span class="tag">spec</span></a>
+<!-- STATUS:authcta:END -->
+            </div>
+        </header>
+        <main>
+            <section>
+                <h1>Pricing</h1>
+                <p class="lede">
+                    Planned packaging, published early so it can be argued with.
+                    <strong>Nothing on this page is purchasable</strong> — billing is not
+                    built, and there is no checkout to hide behind a button.
+                </p>
+
+                <!-- STATUS:banner:BEGIN -->
+<p class="banner" role="status">
+  <strong>Nothing here is deployed.</strong>
+  Of 40 capabilities, <b>24</b> run and are tested on a developer machine
+  and <b>16</b> are written down and not built.
+  <b>0</b> are serving the public.
+  <a href="/status">The full table</a> says which is which, as of 2026-08-22.
+</p>
+<!-- STATUS:banner:END -->
+            </section>
+
+            <section>
+                <h2>Plans</h2>
+                <div class="scroll">
+                    <!--
+                        COGS and gross-margin columns were removed 2026-08-21 on outside
+                        review. They were measured, first-party and dated -- good internal
+                        validation, and they stay in STACK_HUB.md 0.6 where they belong. On a
+                        public page they are the wrong artifact: a customer needs price,
+                        capacity, capability and limits, and a competitor needs nothing at all.
+                        This is a positioning judgement, not a correction; the numbers were
+                        never wrong.
+                    -->
+                    <table>
+                        <caption>
+                            Capacity figures are the machine-sized state under management.
+                            Prices are planned and not yet chargeable.
+                        </caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Plan</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Machine state</th>
+                                <th scope="col">WRL graph history</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Free</th>
+                                <td class="num">$0</td>
+                                <td class="num">10 GB</td>
+                                <td class="num">unlimited</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Driver</th>
+                                <td class="num">$6/mo</td>
+                                <td class="num">100 GB</td>
+                                <td class="num">unlimited</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Fleet</th>
+                                <td class="num">$19/mo</td>
+                                <td class="num">500 GB</td>
+                                <td class="num">unlimited</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Factory</th>
+                                <td class="num">$69/mo</td>
+                                <td class="num">2 TB</td>
+                                <td class="num">unlimited</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Enterprise</th>
+                                <td class="num">custom</td>
+                                <td class="num">dedicated</td>
+                                <td class="num">unlimited</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>
+                    Every plan includes <strong>unlimited WRL graph history</strong> — the
+                    provenance, the tracks, every attempt your agents ever made. That is not
+                    generosity: the graph is
+                    <a href="/">about 0.2% of a backup at its ceiling</a>, so keeping every
+                    version of it costs us approximately nothing and there would be no honest
+                    reason to meter it.
+                </p>
+                <p class="dim">
+                    <strong>Machine state is a different thing and is metered.</strong> Retained
+                    unique bytes — chunks and snapshots of the machine itself — count against
+                    the quota above. Under content addressing an unchanged chunk is stored once
+                    however many versions reference it, so history is far cheaper than a naive
+                    full-copy backup; it is not free. Saying otherwise would collapse the two
+                    world sizes back together, which is the one distinction this product rests
+                    on.
+                </p>
+            </section>
+
+            <section>
+                <h2>These plans do not include a machine</h2>
+                <p>
+                    Stated plainly because the opposite assumption is easy and would be
+                    ruinous. Driver, Fleet and Factory buy
+                    <strong>persistence, sync, restore and fleet control</strong> for machines
+                    you already have. They do not include hosted CPU, memory or GPU.
+                </p>
+                <p>
+                    The arithmetic is not close. A single permanent 16-core hosted runner costs
+                    a multiple of Factory's entire price — so a storage tier cannot absorb one
+                    without inverting its own margin. Hosted capacity will therefore be metered
+                    separately:
+                </p>
+                <figure class="fig">
+                    <pre>
+COMPUTEDRIVEN CAPACITY
+
+  CPU        $ / compute-hour
+  memory     $ / GB-hour
+  GPU        $ / GPU-hour
+  storage    ephemeral disk
+  egress     where applicable</pre
+                    >
+                    <figcaption>
+                        <code>Factory $69 + $143.82 capacity</code> is a legitimate invoice.
+                        "Factory includes a runner" is a bankrupt one.
+                    </figcaption>
+                </figure>
+                <p class="dim">
+                    Those rates are not set. When they are, they will appear here with the date
+                    they were measured — not before.
+                </p>
+            </section>
+
+            <section>
+                <h2>Why there is no sign-up button</h2>
+                <p>
+                    Because taking money for something requires it to exist. Provisioning,
+                    billing and entitlements are the last milestone in the plan, not the first,
+                    and a checkout flow in front of unbuilt capacity is just a way of borrowing
+                    from a customer. <a href="/status">The status page</a> lists what runs
+                    today, and it is generated from the same file the rest of this site reads.
+                </p>
+            </section>
+
+            <nav class="pages" aria-label="Sections">
+                <a href="/">Overview</a>
+                <a href="/architecture">Architecture</a>
+                <a href="/security">Security</a>
+                <a href="/pricing" aria-current="page">Pricing</a>
+                <a href="/status">Status</a>
+            </nav>
+        </main>
+
+        <footer>
+            <!-- STATUS:footauth:BEGIN -->
+<div class="foot-auth">
+  <a class="foot-auth-cta" href="/auth">Sign in &rarr;</a>
+  <p class="foot-auth-note">There is no sign-in yet — <code>portal_login</code> stands at <b>spec</b>. The auth page says what has to exist before there is a door here, and <a href="/status">the status table</a> carries the rung.</p>
+</div>
+<!-- STATUS:footauth:END -->
+            <p>Storage prices re-checked 2026-08-15 against the provider's own published rates.</p>
+            <div class="foot-fam">
+                <span>One system, three ways in</span>
+                <span class="ff-links">
+                    <a href="https://tr.computedriven.com/">T&amp;R</a>
+                    <a href="https://super.computedriven.com">Super (CD)</a>
+                    <b>[World] Cloud</b>
+                    <a href="https://computedriven.com">computedriven.com <span aria-hidden="true">&#8599;</span></a>
+                </span>
+            </div>
+        </footer>
+
+        <script type="module" src="/amp-nav.js"></script>
+        <amp-nav property="cloud"></amp-nav>
+    </body>
+</html>

@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Status — [World] Cloud</title>
+        <meta
+            name="description"
+            content="Every ComputeDriven Cloud capability and the rung it actually stands on: spec, local, staged or live. Generated from a single machine-readable manifest, not written by hand."
+        />
+        <link rel="canonical" href="https://cloud.computedriven.com/status" />
+        <link rel="stylesheet" href="/assets/site.css" />
+    </head>
+    <body>
+        <header class="site">
+            <div class="site-bar">
+                <a class="site-logo" href="https://computedriven.com" aria-label="ComputeDriven — the studio [World] Cloud is one of three properties of"><b>[World]</b> Cloud<span class="bto" aria-hidden="true">&#8599;</span><span class="bto bto-w" aria-hidden="true">computedriven.com</span></a>
+                <nav class="site-links" aria-label="Primary">
+                    <a href="/">Overview</a>
+                    <a href="/architecture">Architecture</a>
+                    <a href="/security">Security</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/status" aria-current="page">Status</a>
+                </nav>
+                <!-- STATUS:authcta:BEGIN -->
+<a class="site-auth" href="/auth">Sign in <span class="tag">spec</span></a>
+<!-- STATUS:authcta:END -->
+            </div>
+        </header>
+        <main>
+            <section>
+                <h1>Status</h1>
+                <p class="lede">
+                    What is built, what is written down, and what is serving anyone. This page
+                    and every claim elsewhere on the site are generated from
+                    <a href="/status.json"><code>status.json</code></a> — no page hand-writes a
+                    rung, and a build check fails if one drifts.
+                </p>
+
+                <!-- STATUS:banner:BEGIN -->
+<p class="banner" role="status">
+  <strong>Nothing here is deployed.</strong>
+  Of 40 capabilities, <b>24</b> run and are tested on a developer machine
+  and <b>16</b> are written down and not built.
+  <b>0</b> are serving the public.
+  <a href="/status">The full table</a> says which is which, as of 2026-08-22.
+</p>
+<!-- STATUS:banner:END -->
+            </section>
+
+            <section>
+                <h2>What the rungs mean</h2>
+                <!-- STATUS:legend:BEGIN -->
+<dl class="legend">
+  <dt><span class="rung rung-live">live</span></dt>
+  <dd>Serving the public.</dd>
+  <dt><span class="rung rung-staged">staged</span></dt>
+  <dd>Deployed somewhere non-public.</dd>
+  <dt><span class="rung rung-local">local</span></dt>
+  <dd>Implemented, and its tests run on a developer machine.</dd>
+  <dt><span class="rung rung-spec">spec</span></dt>
+  <dd>Written down. No code.</dd>
+</dl>
+<!-- STATUS:legend:END -->
+                <p class="dim">
+                    A capability cannot be described anywhere on this site as more than its
+                    rung here. That constraint is the point of the file: it is easier to keep
+                    one manifest honest than five pages consistent.
+                </p>
+            </section>
+
+            <section>
+                <h2>Capabilities</h2>
+                <div class="scroll">
+                    <!-- STATUS:table:BEGIN -->
+<table class="status">
+  <caption>Capability rungs, as of 2026-08-22 — Cloud v1 — M0 / M1-local / M1.5-local / M2 shape</caption>
+  <thead>
+    <tr><th scope="col">Capability</th><th scope="col">Rung</th><th scope="col">What that means here</th><th scope="col">Where to check</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Append-only world versions and audit</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>0004 called world_versions immutable while 0007 granted UPDATE and DELETE on it. Now enforced by the verb matrix, proven by attempting the write and witnessing the row survived.</td>
+      <td><code>worker/migrations/0011_verb_matrix.sql · battery group I · CD_SABOTAGE=verbs</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Column-level authority on mutable tables</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>0011 granted table-wide UPDATE on memberships while its own comment said last-seen only; a viewer promoted itself to owner. Authority-bearing columns are now separately granted.</td>
+      <td><code>worker/migrations/0012_column_authority.sql · battery group J · CD_SABOTAGE=columns</code></td>
+    </tr>
+    <tr>
+      <th scope="row">ComputeDriven → provider action translation</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>The translation is a declared table checked in BOTH directions against a closed provider vocabulary, so a correct R2 grant (ListObjectsV1 + ListObjectsV2 for one ComputeDriven ListObjects) conforms and half of one is refused as an under-grant. R2's own words were verified first-party against Cloudflare's documentation, not recalled.</td>
+      <td><code>worker/src/r2native.mjs · worker/test/r2native.test.mjs</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Concurrency battery (two real sessions)</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>A separate battery, because tenant-isolation.sh runs one session on one connection and every property it can express is sequential. Hand-steps two sessions to a deterministic interleaving rather than racing and hoping, and judges its sabotage modes PER GROUP so a control that fires for the wrong reason reports MISDIRECTED.</td>
+      <td><code>./worker/test/concurrency.sh · CD_SABOTAGE=lock · CD_SABOTAGE=quota</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Entitlement + storage quota admission</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>M1.5 (R24). Entitlement, a two-number byte ledger, and an expiring reservation with exactly-once finalize/abort/expiry. Admission is ONE statement: 20 simultaneous 100-byte requests against a 1000-byte limit admit exactly 10. Round 7 made it REQUEST-idempotent rather than merely accounting-idempotent (four concurrent retries all succeed with one reservation and zero errors), moved authority checks ABOVE replay, and bound the idempotency key to the whole request tuple. It is admission-safe and NOT hard-quota-safe — see byte_enforced_quota.</td>
+      <td><code>worker/migrations/0014 + 0016 · worker/src/admission.mjs · battery group K · concurrency.sh group P</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Entrypoint composition battery</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Drives the real fetch handler, not modules. Exists because a JWKS rate-cap that passed its own module test did not hold at the entrypoint.</td>
+      <td><code>worker/test/entrypoint.test.mjs</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Function-level privilege separation</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>PUBLIC holds EXECUTE on nothing; only the api role may call a resolver. Fixed after a review found readonly could mint principals.</td>
+      <td><code>worker/migrations/0009_function_acl.sql · battery D12-D17</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Marketing + status surface</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>These pages. Built, not served.</td>
+      <td><code>cloud.computedriven.com/</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Object-scoped write authority (M2 shape)</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>One exact object key, not a prefix: a credential for .../chunk/abc cannot reach .../chunk/def. PutObject only. The intent carries expected bytes and a content digest and cannot over-commit its reservation CONCURRENTLY -- serialized on the reservation row with FOR UPDATE, the same lock finalize_storage() and abort_storage() have taken since 0014. An object key binds the whole promise {reservation, key, bytes, digest} (R43). THE STATE MACHINE IS THREE STATES AND ONE IS TERMINAL: offered, observed, client_abandoned. `observed` is provider truth and no local transition may walk it back (R54); `client_abandoned` is a DECLARATION that releases nothing, because abandoning a row in our database does not revoke a presigned URL already in the clients hands (R55). Only the reservation dying releases bytes, which is why the byte arithmetic has no state predicate at all.</td>
+      <td><code>worker/migrations/0019 + 0022 · concurrency groups Q and R · CD_SABOTAGE=offer · CD_SABOTAGE=observe</code></td>
+    </tr>
+    <tr>
+      <th scope="row">OIDC subject → principal → organization</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Resolvers are implemented and tested, and idempotent under CONCURRENCY as well as in sequence. The mechanism CHANGED this round: 0013 used a PostgreSQL advisory lock, which Hyperdrive lists as unsupported — correct PostgreSQL that the production wire refuses. 0015 serializes on the unique partial index instead. No Keycloak has issued a real token to them.</td>
+      <td><code>worker/migrations/0015_provider_safe_identity.sql · battery groups F and L · ./worker/test/concurrency.sh group N</code></td>
+    </tr>
+    <tr>
+      <th scope="row">OIDC token verification (RS256, pinned)</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Algorithm pinned, never read from the token; iat required, crit refused, forced JWKS refresh rate-capped. No realm has issued it a real token.</td>
+      <td><code>worker/src/jwt.mjs · worker/test/jwt.test.mjs</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Organizations resolved by stable IdP id</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Alias is for selection only. A token carrying aliases without ids is refused as a realm misconfiguration.</td>
+      <td><code>worker/src/authz.mjs organizationEntries() · battery group F</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Pigsty schema + migrations</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Applies clean, with a working negative control and a regression proof. THE VERSION IT WAS MEASURED ON IS A FACT ABOUT THE RUN, NOT ABOUT THIS SENTENCE: the battery block below records the migration count, the PostgreSQL major it ran against, and whether anything warned. R33 targets 17.x because Hyperdrive documents known support for 9.0-17.x, and the batteries now default to the target build when it is installed rather than to whatever the box happens to have. This note used to carry its own copy of all three numbers and went stale while every gate stayed green -- scripts/check-status-prose.mjs is why it cannot again.</td>
+      <td><code>worker/migrations/ · ./worker/test/tenant-isolation.sh</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Principal / organization suspension</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>suspended and closed now refuse by name. They were decorative until 2026-08-21.</td>
+      <td><code>worker/migrations/0008_principal_status.sql · battery group G</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Provider authority may not exceed scope</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Two laws, not one: no widening (safety) AND no under-granting (functionality). Checked against the PROVIDER-NATIVE grant through a declared translation table, because comparing R2's action names to ComputeDriven's directly made a correct R2 adapter fail its own law. Closed vocabulary: an action R2 does not define is refused as unknown. No provider is bound to it yet.</td>
+      <td><code>worker/src/r2creds.mjs assertRefines() · worker/src/r2native.mjs · worker/test/r2native.test.mjs</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Provider-observed storage accounting (R32)</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>R32 is PROPOSED, not ruled, and is built anyway so it can be ruled with a number. THREE THINGS EARLIER ROUNDS GOT WRONG HERE. The consumer was UNREACHABLE -- it runs as computedriven_ledger and cd.organizations had no policy admitting that role, so every event including every valid one was refused (measured: count returns 0 with a row present). An append-only log is not an inventory (R41): R2 fires object-create on OVERWRITE, so summing the log charged a replaced body twice. And the queue consumer sat OUTSIDE the lock protocol, so a provider observation could be overwritten by a request-path replay -- measured, group R: fresh write authority handed out for an object R2 already held. DELIVERY identity is the queue message id, read from the ENVELOPE so a producer cannot choose it; (bucket, key) is object identity; etag and event_time are object state (R57). PROVIDER-EVENT identity is not exposed at all -- R2's notification body carries account, action, bucket, object and eventTime and no event id -- so what we have is exactly-once processing of a queue MESSAGE, and this note called that 'event identity' for a day after R57 was narrowed. Still runs against FIXTURE events -- no bucket, no queue, no notification rule.</td>
+      <td><code>worker/migrations/0021 + 0022 · worker/src/reconcile.mjs · battery groups M and O · concurrency group R</code></td>
+    </tr>
+    <tr>
+      <th scope="row">R2 credential scope computation</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>The prefix is BUILT from the organization id rather than validated against it, so no argument combination reaches another tenant. A scope also carries an unforgeable provenance brand: grantForScope() used to accept any object with a string `prefix`, so a hand-built whole-bucket scope produced a signable grant.</td>
+      <td><code>worker/src/r2creds.mjs</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Request path is Hyperdrive-compatible</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Battery group L asks the DATABASE which functions the API role may execute and reads their bodies, so advisory locks, LISTEN/NOTIFY and PREPARE/DEALLOCATE on the request path fail a check rather than a deployment. Exists because a ruled fix went green locally and Hyperdrive refuses the mechanism it used. It proves the schema is compatible; it CANNOT prove Hyperdrive accepts it — that needs a real binding.</td>
+      <td><code>./worker/test/tenant-isolation.sh group L · worker/test/live-falsifier.mjs cases F, G, H</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Server-derived object permission</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>The client requests an operation; ROLE and WORLD STATUS decide what it may become. A viewer asking to write is refused, not downgraded. Entitlement and quota are now part of the decision too — a write permission requires a storage admission (R24).</td>
+      <td><code>worker/migrations/0010_membership_role.sql · worker/src/authz.mjs permissionFor()</code></td>
+    </tr>
+    <tr>
+      <th scope="row">status.json battery numbers are derived, not typed</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Runs all five battery invocations and refuses to agree with a stale number. Exists because this file said “10 migrations” against a tree of twelve, and published a sabotage control (66/8) and a regression proof (28) from four migrations earlier — control results nobody re-runs casually are the ones that go stale. The RUNGS were already generated into the pages by tools/render-status.mjs --verify; this covers the counts, which were not.</td>
+      <td><code>scripts/cloud-status-counts.mjs · cloud.computedriven.com/tools/render-status.mjs --verify</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Tenant isolation (fail-closed RLS)</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Clean, with a working negative control and a regression proof against migrations 0008-0010 removed. Counts in the battery block.</td>
+      <td><code>./worker/test/tenant-isolation.sh · CD_SABOTAGE=1 for the control</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Transaction-entry tenant context</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Context is established on entering the transaction. The brand proves a tenant was minted by deriveTenant() and not hand-built — it does NOT prove the id came from a successful authentication, since deriveTenant() is exported and trusted code could misuse it.</td>
+      <td><code>worker/src/tenant.mjs · worker/test/worker.test.mjs</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Unforgeable verified-claims brand</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>verifyToken brands its result in a module-private WeakSet. Nothing exported can add to it, so a structural clone of verified claims is still refused.</td>
+      <td><code>worker/src/jwt.mjs assertVerified()</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Verified claims are frozen, not just branded</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>The brand proved an object WAS ONCE verified; mutating it kept the brand. Deep-frozen before branding, including the nested organization claim.</td>
+      <td><code>worker/src/jwt.mjs deepFreeze() · battery</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Commerce — checkout, payment, subscriptions</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>M6, and now ONLY commerce. Entitlement and quota are authorization and moved ahead of M2 (R24); they are built and local — see storage_admission. What is missing here is checkout, payment and subscription lifecycle, plus the metered compute SKU that a storage tier cannot absorb.</td>
+      <td><code>CLOUD_V1.md §5</code></td>
+    </tr>
+    <tr>
+      <th scope="row">ComputeDriven-hosted capacity (Hetzner)</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>M5. No paid infrastructure has been provisioned.</td>
+      <td><code>CLOUD_V1.md §4</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Control-plane API surface</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>Routes and refusal mapping exist and parse, and the credential route now takes the world lookup and the storage reservation in ONE transaction. connect() throws by design — no Hyperdrive driver adapter has been written.</td>
+      <td><code>worker/src/index.mjs · worker/wrangler.toml</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Cross-request JWKS refresh admission</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>The module-scope cache is best-effort in-isolate only. A durable limit needs a cross-request mechanism and is NOT claimed.</td>
+      <td><code>worker/src/index.mjs jwksFor()</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Keycloak realm on Fly</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>Ruled (R4) to Fly iad, database on PlanetScale. Not provisioned.</td>
+      <td><code>agents/C-infrastructure.md §3</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Live-provider falsifier (plan only)</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>Questions no local test can answer — see falsifier_cases for how many — each written down with what it would falsify and what we would do about it BEFORE it is run, so a negative result stays informative instead of becoming something to explain away. It PROVISIONS NOTHING and refuses to run without real bindings. Creating the account, bucket and queue is a spend decision. The count is DERIVED as of round 7.3: this note said “Eight” against an array of nine for a full round, and the prose gate could not see it because a fact that lives only in prose has nothing to disagree with.</td>
+      <td><code>worker/test/live-falsifier.mjs --plan</code></td>
+    </tr>
+    <tr>
+      <th scope="row">LOCAL / FLEET placement</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>M4.</td>
+      <td><code>CLOUD_V1.md §4</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Minting real R2 credentials</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>The scope logic is local; the provider is not. No bucket, no account. FakeR2Provider is the only implementation and its keys say so.</td>
+      <td><code>worker/src/r2creds.mjs R2Provider · agents/D-worker-auth.md</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Portal sign-in (BFF, server session)</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>No portal exists.</td>
+      <td><code>CLOUD_V1.md §4 M1</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Provider-enforced byte ceiling on a write credential (R31)</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>OPEN, AND DELIBERATELY NOT CLAIMED. R2 temporary credentials constrain bucket, operations, prefixes/objects and TTL and document no maximum byte count; presigned URLs document Content-Type as signed and ENFORCED and say nothing about Content-Length. So reserving 1 MB does not stop R2 accepting 500 MB — the database refusal at finalize is correct and too late. THE EXPERIMENT HAS BEEN RE-AIMED: the S3-compatibility page documents neither Content-Length nor x-amz-checksum-sha256 for PutObject, so the old case B would have measured our header choice rather than R2. It does document Content-MD5, which binds CONTENT and is strictly stronger than a byte ceiling — a bound digest refuses a longer body, a shorter body and a same-length different body alike. Two questions hide in one: does the signature bind the header, and does R2 verify the digest against the body.</td>
+      <td><code>CLOUD_V1.md §6.5 · worker/test/live-falsifier.mjs case B</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Remote execution on a node</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>A Cloud request is a request. The local runtime verifies and may refuse.</td>
+      <td><code>CLOUD_V1.md §7</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Restore onto a second machine</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>M2. R23 is RULED: machine authority is NOT restored — data access is separately reacquired through a client-held User Recovery Key that unwraps the World Data Key. Revocation governs future Cloud access; it is not retroactive erasure, and we say so.</td>
+      <td><code>CLOUD_V1.md §6.2b · REVISION_REGISTER.md R23</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Super node identity + Fleet + revoke</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>M3.</td>
+      <td><code>CLOUD_V1.md §4</code></td>
+    </tr>
+    <tr>
+      <th scope="row">TRVM-governed Cloud transitions</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>TRVM P4 is proven in its own tree and is wired to nothing here. Cloud behaviour is Postgres and application convention, and is called that.</td>
+      <td><code>TRVM/governance/round-11-ledger.md</code></td>
+    </tr>
+    <tr>
+      <th scope="row">Worker → Pigsty over Hyperdrive</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>Ruled (R7). No binding exists; the schema has only ever been reached over a local socket.</td>
+      <td><code>CLOUD_V1.md §3</code></td>
+    </tr>
+    <tr>
+      <th scope="row">World sync — chunk, hash, upload</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>M2. The WRITE SHAPE is decided (R31 work): one bounded content-addressed chunk, one reservation, one EXACT object key, one short-lived artifact — so the session can last days while each grant lasts minutes. Multipart is NOT authorized; the claim that M2 would need it is retracted, because a 2 TB world is not a 2 TB object. No chunking implementation exists.</td>
+      <td><code>CLOUD_V1.md §6.6 · worker/migrations/0017 · worker/src/r2native.mjs</code></td>
+    </tr>
+  </tbody>
+</table>
+<!-- STATUS:table:END -->
+                </div>
+            </section>
+
+            <section>
+                <h2>What "not deployed" means here</h2>
+                <p>
+                    No account has been created and no infrastructure has been provisioned by
+                    this work. There is no Keycloak realm, no Hyperdrive binding, no object
+                    bucket and no hosted machine. The schema has only ever been reached over a
+                    local socket, by a test that builds a throwaway database and destroys it
+                    again.
+                </p>
+                <p>
+                    Where a subsystem is unavailable it is named <code>spec</code> rather than
+                    stubbed out behind a mock that would report success. A mock that passes for
+                    production is worse than a missing feature, because only one of the two
+                    tells you the truth.
+                </p>
+            </section>
+
+            <nav class="pages" aria-label="Sections">
+                <a href="/">Overview</a>
+                <a href="/architecture">Architecture</a>
+                <a href="/security">Security</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/status" aria-current="page">Status</a>
+            </nav>
+        </main>
+
+        <footer>
+            <!-- STATUS:footauth:BEGIN -->
+<div class="foot-auth">
+  <a class="foot-auth-cta" href="/auth">Sign in &rarr;</a>
+  <p class="foot-auth-note">There is no sign-in yet — <code>portal_login</code> stands at <b>spec</b>. The auth page says what has to exist before there is a door here, and <a href="/status">the status table</a> carries the rung.</p>
+</div>
+<!-- STATUS:footauth:END -->
+            <p>
+                Regenerate with <code>node tools/render-status.mjs</code>; check with
+                <code>--verify</code>.
+            </p>
+            <div class="foot-fam">
+                <span>One system, three ways in</span>
+                <span class="ff-links">
+                    <a href="https://tr.computedriven.com/">T&amp;R</a>
+                    <a href="https://super.computedriven.com">Super (CD)</a>
+                    <b>[World] Cloud</b>
+                    <a href="https://computedriven.com">computedriven.com <span aria-hidden="true">&#8599;</span></a>
+                </span>
+            </div>
+        </footer>
+
+        <script type="module" src="/amp-nav.js"></script>
+        <amp-nav property="cloud"></amp-nav>
+    </body>
+</html>

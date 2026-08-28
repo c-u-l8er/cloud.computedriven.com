@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>[World] Cloud — one world, any machine</title>
+        <meta
+            name="description"
+            content="Keep the world, not just the files. [World] Cloud carries a machine-sized world between your own hardware, your fleet, and hosted capacity — while placement, authority and evidence stay explicit. State moves; authority does not."
+        />
+        <link rel="canonical" href="https://cloud.computedriven.com/" />
+        <meta property="og:title" content="[World] Cloud — one world, any machine" />
+        <meta
+            property="og:description"
+            content="State moves. Authority does not. A restored world on a second machine is a machine that has been granted the world — and the grant is a separate, refusable act."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://cloud.computedriven.com/" />
+        <link rel="stylesheet" href="/assets/site.css" />
+        <link rel="stylesheet" href="/assets/hero-theater.css" />
+    </head>
+    <body>
+        <header class="site">
+            <div class="site-bar">
+                <a class="site-logo" href="https://computedriven.com" aria-label="ComputeDriven — the studio [World] Cloud is one of three properties of"><b>[World]</b> Cloud<span class="bto" aria-hidden="true">&#8599;</span><span class="bto bto-w" aria-hidden="true">computedriven.com</span></a>
+                <nav class="site-links" aria-label="Primary">
+                    <a href="/" aria-current="page">Overview</a>
+                    <a href="/architecture">Architecture</a>
+                    <a href="/security">Security</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/status">Status</a>
+                </nav>
+                <!-- STATUS:authcta:BEGIN -->
+<a class="site-auth" href="/auth">Sign in <span class="tag">spec</span></a>
+<!-- STATUS:authcta:END -->
+            </div>
+        </header>
+        <main>
+            <section class="hero">
+                <div class="ht" data-ht>
+                    <canvas class="ht-canvas" aria-hidden="true"></canvas>
+                    <div class="ht-copy">
+                        <h1>One world.<br />Any machine.</h1>
+                        <p class="lede">
+                            Keep the world, not just the files. Direct work across
+                            <a href="https://super.computedriven.com">Super (CD)</a>, your own fleet and
+                            ComputeDriven-hosted capacity &mdash; while placement, authority and evidence
+                            stay explicit rather than implied.
+                        </p>
+                        <p class="ht-thesis" aria-hidden="true">state moves &middot; authority does not</p>
+                    </div>
+                    <div class="ht-floors" aria-hidden="true">
+                        <div class="ht-floor" data-fl="a"><span class="ht-floor-line"></span><span class="ht-floor-cap"></span></div>
+                        <div class="ht-floor" data-fl="b"><span class="ht-floor-line"></span><span class="ht-floor-cap"></span></div>
+                    </div>
+                    <p class="ht-note" aria-hidden="true">click to move the world &middot; runs in this page &middot; nothing deployed</p>
+                </div>
+
+                <!-- STATUS:banner:BEGIN -->
+<p class="banner" role="status">
+  <strong>Nothing here is deployed.</strong>
+  Of 40 capabilities, <b>24</b> run and are tested on a developer machine
+  and <b>16</b> are written down and not built.
+  <b>0</b> are serving the public.
+  <a href="/status">The full table</a> says which is which, as of 2026-08-22.
+</p>
+<!-- STATUS:banner:END -->
+            </section>
+
+            <section>
+                <h2>What the product actually claims</h2>
+                <figure class="fig">
+                    <pre>
+LOCAL ──┐
+        │
+FLEET ──┼── WORLD ── authority ── run ── receipt
+        │
+CLOUD ──┘</pre
+                    >
+                    <figcaption>
+                        One placement model, three kinds of machine. Not three products.
+                        <span class="dim"
+                            >(A scheduler that acts on this is M4 — see
+                            <a href="/status">status</a>.)</span
+                        >
+                    </figcaption>
+                </figure>
+                <p>
+                    A world moves between machines. <strong>Authority does not travel with
+                    it.</strong> A restored world on a second machine is not the first machine
+                    wearing its clothes — it is a new machine that has been <em>granted</em>
+                    the world, and the grant is a separate act that can be refused.
+                </p>
+                <p>
+                    That distinction is the whole product, and it is why the sync-and-restore
+                    round ships before the hosted-compute round. A machine we rent you proves
+                    nothing that a machine you already own does not prove better.
+                </p>
+            </section>
+
+            <section>
+                <h2>A world is bigger than you think, and the interesting part is free</h2>
+                <p>
+                    "World" gets used for two things whose sizes differ by four orders of
+                    magnitude, so here both have their own name and neither borrows the
+                    other's.
+                </p>
+                <div class="scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Term</th>
+                                <th scope="col">What it is</th>
+                                <th scope="col">Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">World</th>
+                                <td>the persistent machine-sized environment</td>
+                                <td class="num">10 GB – 10 TB</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">World version</th>
+                                <td>a content-addressed root describing it at one instant</td>
+                                <td class="num">a hash</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">WRL graph</th>
+                                <td>the semantic and topological layer inside it</td>
+                                <td class="num">247 KB – 213 MB</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>
+                    Measured, not estimated: the graph is <strong>0.21%</strong> of a 100 GB
+                    backup at its enforced ceiling, and 0.0002% in ordinary use. So the
+                    differentiated part — the provenance, the tracks, the history of every
+                    attempt — <strong>rides along nearly free inside a tier priced for the
+                    bulk.</strong> You pay for the machine-sized state; the WRL graph beside it
+                    costs almost nothing to carry.
+                </p>
+            </section>
+
+            <section>
+                <h2>How it fits together</h2>
+                <ul class="grid">
+                    <li class="card">
+                        <h3><a href="https://super.computedriven.com">Super (CD)</a></h3>
+                        <p>The local-first cockpit. Compute and machine authority live here, on hardware you own.</p>
+                    </li>
+                    <li class="card">
+                        <h3>[World] Cloud</h3>
+                        <p>Identity, persistence, fleet, restore, and hosted capacity. This surface.</p>
+                    </li>
+                    <li class="card">
+                        <h3><a href="https://tr.computedriven.com">T&amp;R</a></h3>
+                        <p>A native, spatial environment over the same world. A FreeBSD 15 distribution.</p>
+                    </li>
+                    <li class="card">
+                        <h3><a href="https://wrl.traaviis.com">WRL</a></h3>
+                        <p>How a world's topology and capabilities are represented.</p>
+                    </li>
+                    <li class="card">
+                        <h3><a href="https://trvm.traaviis.com">TRVM</a></h3>
+                        <p>Verification semantics, claimed only where a runtime actually checks the transition.</p>
+                    </li>
+                    <li class="card">
+                        <h3><a href="https://traaviis.com/">TRAAVIIS</a></h3>
+                        <p>Evidence and provenance — what makes a receipt worth reading twice.</p>
+                    </li>
+                </ul>
+                <p class="dim">
+                    <a href="/architecture">The architecture in full</a> ·
+                    <a href="/security">How tenants are kept apart</a> ·
+                    <a href="/pricing">What it costs</a>
+                </p>
+            </section>
+
+            <section id="family">
+                <h2>One system, three ways in</h2>
+                <p class="lede">
+                    This surface is the destination, not the whole studio. ComputeDriven
+                    publishes one destination and two ways in — and both ways in are a
+                    download, only one of which replaces what you boot.
+                </p>
+                <div class="fam">
+                    <a class="fam-card" href="https://tr.computedriven.com/">
+                        <span class="fc-n">T&amp;R <span aria-hidden="true">&#8599;</span></span>
+                        <span class="fc-d">the operating system</span>
+                        <span class="fc-h">download &amp; boot &middot; v0.3</span>
+                    </a>
+                    <a class="fam-card" href="https://super.computedriven.com">
+                        <span class="fc-n">Super (CD) <span aria-hidden="true">&#8599;</span></span>
+                        <span class="fc-d">the desktop application</span>
+                        <span class="fc-h">download &amp; install &middot; in dev</span>
+                    </a>
+                    <div class="fam-card here">
+                        <div class="fc-n">
+                            [World] Cloud <span class="fc-you">you are here</span>
+                        </div>
+                        <span class="fc-d">one world, any machine</span>
+                        <span class="fc-h">hosted &middot; forked &middot; restored &middot; in dev</span>
+                    </div>
+                </div>
+                <p class="fam-foot">
+                    <a href="https://computedriven.com">computedriven.com <span aria-hidden="true">&#8599;</span></a>
+                    <span>the studio, and the one page that holds the three together</span>
+                </p>
+            </section>
+
+            <nav class="pages" aria-label="Sections">
+                <a href="/" aria-current="page">Overview</a>
+                <a href="/architecture">Architecture</a>
+                <a href="/security">Security</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/status">Status</a>
+            </nav>
+        </main>
+
+        <footer>
+            <!-- STATUS:footauth:BEGIN -->
+<div class="foot-auth">
+  <a class="foot-auth-cta" href="/auth">Sign in &rarr;</a>
+  <p class="foot-auth-note">There is no sign-in yet — <code>portal_login</code> stands at <b>spec</b>. The auth page says what has to exist before there is a door here, and <a href="/status">the status table</a> carries the rung.</p>
+</div>
+<!-- STATUS:footauth:END -->
+            <p>
+                [World] Cloud is under construction in the open. Every claim on this
+                site carries its rung, and <a href="/status">the status page</a> is generated
+                from one file rather than written by hand.
+            </p>
+            <div class="foot-fam">
+                <span>One system, three ways in</span>
+                <span class="ff-links">
+                    <a href="https://tr.computedriven.com/">T&amp;R</a>
+                    <a href="https://super.computedriven.com">Super (CD)</a>
+                    <b>[World] Cloud</b>
+                    <a href="https://computedriven.com">computedriven.com <span aria-hidden="true">&#8599;</span></a>
+                </span>
+            </div>
+        </footer>
+
+        <script type="module" src="/amp-nav.js"></script>
+        <script type="module" src="/assets/hero-theater.js"></script>
+        <amp-nav property="cloud"></amp-nav>
+    </body>
+</html>

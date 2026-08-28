@@ -1,0 +1,213 @@
+/* hero-theater.css — the homepage opens on a single moving image: the world,
+   rendered live in the site's own monospace, migrating between machines.
+   The renderer is /assets/hero-theater.js; without scripts (or with reduced
+   motion) the headline stands on the dark stage alone, which is the same
+   page this site has always been. Only site.css tokens are used. */
+
+section.hero {
+    border-top: 0;
+    padding-block: 0 clamp(2rem, 4vw, 3rem);
+}
+
+/* the stage is full-bleed; clip the page so 100vw cannot cause a scrollbar.
+   `html` as well as `body`: 100vw counts the vertical scrollbar, so the stage
+   hangs ~8px past the right edge, and clip on `body` alone did not stop the
+   page scrolling those 8px — measured in Chrome, `/` scrolled and every other
+   page did not. Clipping the root is what actually holds. */
+html,
+body {
+    overflow-x: clip;
+}
+
+.ht {
+    /* full-bleed stage: break out of main's max-width */
+    position: relative;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    min-height: clamp(30rem, 78vh, 44rem);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.ht-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.ht-copy {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: clamp(4.5rem, 10vh, 7rem) var(--gutter) 5rem;
+    pointer-events: none;
+}
+.ht-copy a {
+    pointer-events: auto;
+}
+.ht-copy h1 {
+    margin-bottom: 0.35em;
+}
+.ht-copy .lede {
+    max-width: 36ch;
+}
+
+.ht-thesis {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 1.6rem 0 0;
+    opacity: 0.85;
+}
+
+/* the two machine floors the world lands on */
+.ht-floors {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+/* left/top/width are set by layout() in hero-theater.js, because all three
+   depend on R. Do not give this an auto width: translateX(-50%) is the only
+   centring mechanism here, and it needs a width that is the line's, not the
+   caption's, or the underline drifts off the world. */
+.ht-floor {
+    position: absolute;
+    transform: translateX(-50%);
+    text-align: center;
+    font-family: var(--mono);
+}
+.ht-floor-line {
+    display: block;
+    height: 1px;
+    background: var(--dim);
+    opacity: 0.55;
+    box-shadow: 0 1px 0 rgba(141, 139, 156, 0.15);
+}
+.ht-floor-cap {
+    display: inline-block;
+    margin-top: 0.55rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: color 300ms ease, opacity 300ms ease;
+    opacity: 0;
+}
+.ht-floor-cap[data-tone="amber"] {
+    color: var(--amber);
+    opacity: 1;
+}
+.ht-floor-cap[data-tone="dim"] {
+    color: var(--dim);
+    opacity: 1;
+}
+.ht-floor-cap[data-tone="cyan"] {
+    color: var(--cyan);
+    opacity: 1;
+}
+
+.ht-note {
+    position: absolute;
+    right: var(--gutter);
+    bottom: 0.9rem;
+    max-width: 24rem;
+    text-align: right;
+    z-index: 2;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0;
+    opacity: 0.8;
+}
+
+/* small screens: the stage shortens, floors and note stay legible */
+@media (max-width: 700px) {
+    .ht {
+        min-height: 47rem;
+        align-items: flex-start;
+    }
+    .ht-copy {
+        padding-top: 3.5rem;
+        padding-bottom: 0;
+    }
+    .ht-note {
+        display: none;
+    }
+    .ht-floor-cap {
+        font-size: 0.56rem;
+    }
+}
+
+.ht-receipt {
+    position: absolute;
+    z-index: 1;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* ---- the board beneath the stage ---------------------------------------- */
+/* A seamless circuit tile drifts, barely there, behind the world. The lit
+   copy of the same circuitry appears only under the visitor's cursor — the
+   framework beneath, in the family style. Both are plain repeating SVG
+   backgrounds; the drift is a CSS animation, so reduced motion stills it. */
+
+.ht::before,
+.ht::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: url(/assets/circuit-tile.svg);
+    background-size: 280px 280px;
+    pointer-events: none;
+}
+.ht::before {
+    opacity: 0.42;
+    -webkit-mask-image: radial-gradient(115% 100% at 62% 42%, #000 45%, transparent 96%);
+    mask-image: radial-gradient(115% 100% at 62% 42%, #000 45%, transparent 96%);
+    animation: ht-pan 140s linear infinite;
+}
+.ht::after {
+    background-image: url(/assets/circuit-tile-lit.svg);
+    opacity: 0;
+    transition: opacity 350ms ease;
+    -webkit-mask-image: radial-gradient(
+        250px circle at var(--hx, -20%) var(--hy, -20%),
+        rgba(0, 0, 0, 0.9),
+        rgba(0, 0, 0, 0.4) 55%,
+        transparent 74%
+    );
+    mask-image: radial-gradient(
+        250px circle at var(--hx, -20%) var(--hy, -20%),
+        rgba(0, 0, 0, 0.9),
+        rgba(0, 0, 0, 0.4) 55%,
+        transparent 74%
+    );
+    animation: ht-pan 140s linear infinite;
+}
+.ht:hover::after {
+    opacity: 1;
+}
+@keyframes ht-pan {
+    to {
+        background-position: 280px 280px;
+    }
+}
+
+.ht-canvas {
+    z-index: 1;
+}

@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Security — [World] Cloud</title>
+        <meta
+            name="description"
+            content="How tenants are kept apart, why a missing tenant context raises instead of returning nothing, and what this does not solve. Includes the negative-control result for the isolation battery."
+        />
+        <link rel="canonical" href="https://cloud.computedriven.com/security" />
+        <link rel="stylesheet" href="/assets/site.css" />
+    </head>
+    <body>
+        <header class="site">
+            <div class="site-bar">
+                <a class="site-logo" href="https://computedriven.com" aria-label="ComputeDriven — the studio [World] Cloud is one of three properties of"><b>[World]</b> Cloud<span class="bto" aria-hidden="true">&#8599;</span><span class="bto bto-w" aria-hidden="true">computedriven.com</span></a>
+                <nav class="site-links" aria-label="Primary">
+                    <a href="/">Overview</a>
+                    <a href="/architecture">Architecture</a>
+                    <a href="/security" aria-current="page">Security</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/status">Status</a>
+                </nav>
+                <!-- STATUS:authcta:BEGIN -->
+<a class="site-auth" href="/auth">Sign in <span class="tag">spec</span></a>
+<!-- STATUS:authcta:END -->
+            </div>
+        </header>
+        <main>
+            <section>
+                <h1>Security</h1>
+                <p class="lede">
+                    Two claims here are worth more than a page of assurances: what the
+                    isolation tests do when we deliberately break the code, and what this
+                    design explicitly does not protect you from.
+                </p>
+
+                <!-- STATUS:banner:BEGIN -->
+<p class="banner" role="status">
+  <strong>Nothing here is deployed.</strong>
+  Of 40 capabilities, <b>24</b> run and are tested on a developer machine
+  and <b>16</b> are written down and not built.
+  <b>0</b> are serving the public.
+  <a href="/status">The full table</a> says which is which, as of 2026-08-22.
+</p>
+<!-- STATUS:banner:END -->
+            </section>
+
+            <section>
+                <h2>Authorization is layered. Row-level security is the last layer, never the only one.</h2>
+                <figure class="fig">
+                    <pre>
+1.  verified OIDC identity
+2.  verified organization membership
+3.  application authorization
+4.  resource ownership / grant
+5.  PostgreSQL row-level security      ← defence in depth</pre
+                    >
+                    <figcaption>
+                        A system that relies on step 5 alone has one bug between a customer and
+                        someone else's data.
+                    </figcaption>
+                </figure>
+                <p>
+                    Tenant context is derived on the server from a verified token. An
+                    organization id supplied by a browser is never trusted, and it is not the
+                    thing the database is told.
+                </p>
+            </section>
+
+            <section>
+                <h2>A missing tenant context is an error, not an empty result</h2>
+                <p>
+                    This is the subtle one. PostgreSQL's
+                    <code>current_setting(name, true)</code> returns <code>NULL</code> when a
+                    setting is absent, and a security policy that evaluates to NULL merely
+                    <em>hides the row</em>. So the obvious implementation turns "the server
+                    forgot to establish tenant context" into "this organization has no data" —
+                    a silent wrong answer, in the direction that looks perfectly normal, that
+                    no ordinary test will ever catch.
+                </p>
+                <figure class="fig">
+                    <pre>
+valid context      →  uuid
+context missing    →  RAISE
+context malformed  →  RAISE</pre
+                    >
+                    <figcaption>
+                        Every policy in the schema goes through one function with this
+                        contract. It has no code path that returns nothing.
+                    </figcaption>
+                </figure>
+
+                <h3>The exact boundary, because the first version of this claim was too broad</h3>
+                <p>
+                    A policy expression is evaluated per row. So a statement the query planner
+                    can prove scans nothing never reaches that function and never raises. We
+                    measured where the line actually falls, and it is narrower than we first
+                    assumed — an <em>empty table</em> still raises, because the scan is still
+                    planned. Only a constant-false qualifier removes it:
+                </p>
+                <figure class="fig">
+                    <pre>
+SELECT ... FROM cd.worlds WHERE false     no raise, returns 0   ← the whole gap
+SELECT ... FROM cd.audit_events (empty)   RAISES
+SELECT ... FROM cd.worlds LIMIT 0         RAISES
+SELECT ... FROM cd.worlds                 RAISES</pre
+                    >
+                    <figcaption>
+                        Asserted as a known limit in the battery, so it cannot be quietly
+                        rediscovered later.
+                    </figcaption>
+                </figure>
+                <p>
+                    So the guarantee the database makes is
+                    <strong>no row may pass without a valid tenant context</strong> — not "every
+                    statement raises". The difference does not weaken the isolation, since a
+                    statement that returns no rows leaks nothing. It does mean the raise is a
+                    loud backstop rather than the primary control, and the application
+                    establishes tenant context on entering a transaction rather than relying on
+                    a policy to notice later.
+                </p>
+                <p>
+                    Row-level security is enabled <em>and forced</em> on every tenant table, so
+                    the table owner is policed too. Every exemption from that is a named,
+                    listable policy — there are exactly two, both read-only, both belonging to
+                    the login path that resolves an identity before a tenant context can exist.
+                    Nothing bypasses invisibly.
+                </p>
+            </section>
+
+            <section>
+                <h2>The negative control</h2>
+                <p>
+                    A test suite that passes is not evidence until you know it can fail. The
+                    isolation battery has a sabotage mode that swaps the fail-closed function
+                    for the naive version described above, and re-runs unchanged.
+                </p>
+                <div class="scroll">
+                    <!-- STATUS:battery:BEGIN -->
+<table>
+  <caption><code>./worker/test/tenant-isolation.sh</code> — 196 checks, mostly negative, as of 2026-08-25</caption>
+  <thead>
+    <tr><th scope="col">Run</th><th scope="col">Passed</th><th scope="col">Failed</th><th scope="col">What it demonstrates</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Normal</th>
+      <td class="num">196</td>
+      <td class="num">0</td>
+      <td>Cross-tenant reads, writes, updates and deletes all refuse.</td>
+    </tr>
+    <tr>
+      <th scope="row">Sabotaged</th>
+      <td class="num">186</td>
+      <td class="num">10</td>
+      <td>With the naive function installed, an unscoped query returns <code>0</code> rows and reports success. The battery catches it.</td>
+    </tr>
+    <tr>
+      <th scope="row">Regression proof</th>
+      <td class="num">76</td>
+      <td class="num">120</td>
+      <td>With migrations 0008 + 0009 + 0010 + 0011 + 0014 + 0016 + 0017 + 0018 + 0019 + 0020 + 0021 + 0022 + 0023 + 0024 + 0025 + 0026 + 0027 removed, the checks added for those defects fail — so they are load-bearing, not decorative.</td>
+    </tr>
+    <tr>
+      <th scope="row">Concurrency</th>
+      <td class="num">34</td>
+      <td class="num">0</td>
+      <td>Two real sessions, hand-stepped to a deliberate interleaving — <code>./worker/test/concurrency.sh</code>. Simultaneous first logins resolve to one principal; simultaneous quota requests cannot oversubscribe. Serial correctness is not concurrent correctness.</td>
+    </tr>
+    <tr>
+      <th scope="row">Worker suite</th>
+      <td class="num">486</td>
+      <td class="num">0</td>
+      <td>Token verification, tenant context, credential scoping, provider refinement and storage admission — <code>npm test --prefix worker</code>. No account, no network, no dependencies.</td>
+    </tr>
+    <tr>
+      <th scope="row">Worker mutations</th>
+      <td class="num">139</td>
+      <td class="num">0</td>
+      <td>Each vector breaks one security decision in a copy of the source and re-runs the unmodified suite. A surviving mutation is an untested decision.</td>
+    </tr>
+  </tbody>
+</table>
+<!-- STATUS:battery:END -->
+                </div>
+                <p class="dim">
+                    The battery also covers connection re-use, because the production path is
+                    transaction-pooled: a context established in one transaction must not
+                    survive onto the next request that lands on the same backend.
+                </p>
+            </section>
+
+            <section>
+                <h2>What this does not solve</h2>
+                <p>
+                    Collapsing these two questions is a category error, and calling the first
+                    one by the second one's name would be a lie.
+                </p>
+                <div class="scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Question</th>
+                                <th scope="col">Answered by</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Who are you, and are you entitled?</th>
+                                <td>Everything on this page.</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Why can the storage provider not read your data?</th>
+                                <td>
+                                    Client-side keys. <strong>Nothing on this page touches it.</strong>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>
+                    So: <strong>this is authorization, not confidentiality.</strong> Nothing
+                    here is described as end-to-end encrypted, because nothing here makes it so.
+                    Content addressing is actively hostile to access control — if the key is
+                    the hash of the content, then knowing the content is knowing the key — and
+                    the question of where confidentiality comes from is open and recorded as
+                    open rather than quietly assumed away.
+                </p>
+            </section>
+
+            <nav class="pages" aria-label="Sections">
+                <a href="/">Overview</a>
+                <a href="/architecture">Architecture</a>
+                <a href="/security" aria-current="page">Security</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/status">Status</a>
+            </nav>
+        </main>
+
+        <footer>
+            <!-- STATUS:footauth:BEGIN -->
+<div class="foot-auth">
+  <a class="foot-auth-cta" href="/auth">Sign in &rarr;</a>
+  <p class="foot-auth-note">There is no sign-in yet — <code>portal_login</code> stands at <b>spec</b>. The auth page says what has to exist before there is a door here, and <a href="/status">the status table</a> carries the rung.</p>
+</div>
+<!-- STATUS:footauth:END -->
+            <p>Counts on this page come from a suite you can run yourself.</p>
+            <div class="foot-fam">
+                <span>One system, three ways in</span>
+                <span class="ff-links">
+                    <a href="https://tr.computedriven.com/">T&amp;R</a>
+                    <a href="https://super.computedriven.com">Super (CD)</a>
+                    <b>[World] Cloud</b>
+                    <a href="https://computedriven.com">computedriven.com <span aria-hidden="true">&#8599;</span></a>
+                </span>
+            </div>
+        </footer>
+
+        <script type="module" src="/amp-nav.js"></script>
+        <amp-nav property="cloud"></amp-nav>
+    </body>
+</html>

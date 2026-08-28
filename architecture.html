@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Architecture — [World] Cloud</title>
+        <meta
+            name="description"
+            content="Keycloak identifies the subject. Pigsty owns ComputeDriven truth. The node key identifies the machine. Where each part runs, and the three identities that must never collapse into one."
+        />
+        <link rel="canonical" href="https://cloud.computedriven.com/architecture" />
+        <link rel="stylesheet" href="/assets/site.css" />
+    </head>
+    <body>
+        <header class="site">
+            <div class="site-bar">
+                <a class="site-logo" href="https://computedriven.com" aria-label="ComputeDriven — the studio [World] Cloud is one of three properties of"><b>[World]</b> Cloud<span class="bto" aria-hidden="true">&#8599;</span><span class="bto bto-w" aria-hidden="true">computedriven.com</span></a>
+                <nav class="site-links" aria-label="Primary">
+                    <a href="/">Overview</a>
+                    <a href="/architecture" aria-current="page">Architecture</a>
+                    <a href="/security">Security</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/status">Status</a>
+                </nav>
+                <!-- STATUS:authcta:BEGIN -->
+<a class="site-auth" href="/auth">Sign in <span class="tag">spec</span></a>
+<!-- STATUS:authcta:END -->
+            </div>
+        </header>
+        <main>
+            <section>
+                <h1>Architecture</h1>
+                <p class="lede">
+                    One sentence carries most of it:
+                    <span class="thesis"
+                        >Keycloak identifies the subject. Pigsty owns ComputeDriven truth. The
+                        node key identifies the machine.</span
+                    >
+                </p>
+
+                <!-- STATUS:banner:BEGIN -->
+<p class="banner" role="status">
+  <strong>Nothing here is deployed.</strong>
+  Of 40 capabilities, <b>24</b> run and are tested on a developer machine
+  and <b>16</b> are written down and not built.
+  <b>0</b> are serving the public.
+  <a href="/status">The full table</a> says which is which, as of 2026-08-22.
+</p>
+<!-- STATUS:banner:END -->
+            </section>
+
+            <section>
+                <h2>Where things run</h2>
+                <figure class="fig">
+                    <pre>
+                    IDENTITY
+              Keycloak  ·  Fly iad
+                       │
+              PlanetScale PS-5 HA
+              KEYCLOAK DATABASE ONLY
+                       │
+                       ▼
+ ──────────────────────────────────────────────
+                  CLOUDFLARE
+    marketing · portal BFF · API · authorization
+      R2 credential minting · presence (later)
+                       │
+                   Hyperdrive
+                       │
+                  Workers VPC
+                       │
+                Cloudflare Tunnel
+                       │
+                       ▼
+ ──────────────────────────────────────────────
+                    HETZNER
+                   PIGSTY PG
+           queryable ComputeDriven truth
+                       │
+                       │ refs only — never bytes
+                       ▼
+ ──────────────────────────────────────────────
+                       R2
+              machine-sized worlds
+            chunks · manifests · data
+ ──────────────────────────────────────────────
+                       ▲
+                       │  direct transfer, scoped credential
+                       │
+              SUPER / USER MACHINES
+           compute + local authority</pre
+                    >
+                    <figcaption>
+                        Three assertions, each of which was nearly lost — see below.
+                    </figcaption>
+                </figure>
+
+                <h3>The control plane runs on Workers, not on a server</h3>
+                <p>
+                    Cloudflare Workers are V8 isolates: JavaScript and WebAssembly, no BEAM.
+                    Our own runtime, Super (CD), is Elixir/OTP — and that is
+                    <em>not</em> a reason for the cloud to be. Super being Elixir is a fact
+                    about the user's machine. Hyperdrive lets a Worker reach a private
+                    PostgreSQL over a Workers VPC and a Cloudflare Tunnel, so Pigsty keeps its
+                    guarantees without exposing a Postgres port to the internet.
+                </p>
+
+                <h3>Bytes never pass through the Worker</h3>
+                <figure class="fig">
+                    <pre>
+Super / client
+      │  authenticate  ───────────►  Worker
+      │                                ├── resolve principal + organization
+      │                                ├── consult Pigsty
+      │                                ├── authorize the requested object scope
+      │                                └── mint a scoped, short-lived credential
+      │  ◄──────────────────────────────┘
+      │
+      └──────────── chunks ───────────►  R2      direct</pre
+                    >
+                    <figcaption>
+                        Not <code>client → Worker → 400 GB → R2</code>. The credential already
+                        carries the authorization; a proxy in the byte path buys nothing and
+                        costs everything.
+                    </figcaption>
+                </figure>
+
+                <h3>Pigsty holds references, never payloads</h3>
+                <p>
+                    Bytes in Postgres cost roughly 18.7× what they cost in object storage. The
+                    database holds the hash, the size, the ownership and the linkage; R2 holds
+                    the chunks. That split is what makes a 10 TB customer arithmetic rather
+                    than a catastrophe.
+                </p>
+            </section>
+
+            <section>
+                <h2>Three identities that must never collapse</h2>
+                <p>
+                    The failure this prevents is mundane and expensive: someone rebuilds a
+                    virtual machine and history quietly rewrites itself.
+                </p>
+                <figure class="fig">
+                    <pre>
+principal_id       the human or service asking
+node_id            the ComputeDriven execution identity
+provider_id        the infrastructure incarnation  (e.g. a Hetzner server id)</pre
+                    >
+                    <figcaption>
+                        A provider's server id, an IP address, a hostname or an IdP alias is
+                        never the authority identity.
+                    </figcaption>
+                </figure>
+                <p>
+                    So a hosted allocation — "keep one 16-core runner available" — is durable
+                    customer intent, and the machine currently serving it is an
+                    <em>incarnation</em> of that intent. Destroy and rebuild the machine and
+                    the allocation survives with a new incarnation. The receipts that named
+                    the old one stay true, because they named something that really did exist.
+                </p>
+            </section>
+
+            <section>
+                <h2>An identity provider is a binding, not an identity</h2>
+                <p>
+                    <code>principals</code> and <code>organizations</code> are ComputeDriven's
+                    own id space. Keycloak's subject and its organization id live beside them
+                    in <code>principal_identities</code> and
+                    <code>organization_identities</code>, each with a status and a history.
+                </p>
+                <p>
+                    This is not a defence against backups — a faithful restore of the same
+                    Keycloak database keeps its ids. It is a defence against a clean realm
+                    rebuild, a realm migration, an identity-provider change, or leaving
+                    Keycloak entirely. With bindings, each of those is a rebind. With a
+                    <code>keycloak_sub</code> column on the user row, each is a data-loss event
+                    with no recovery path.
+                </p>
+            </section>
+
+            <nav class="pages" aria-label="Sections">
+                <a href="/">Overview</a>
+                <a href="/architecture" aria-current="page">Architecture</a>
+                <a href="/security">Security</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/status">Status</a>
+            </nav>
+        </main>
+
+        <footer>
+            <!-- STATUS:footauth:BEGIN -->
+<div class="foot-auth">
+  <a class="foot-auth-cta" href="/auth">Sign in &rarr;</a>
+  <p class="foot-auth-note">There is no sign-in yet — <code>portal_login</code> stands at <b>spec</b>. The auth page says what has to exist before there is a door here, and <a href="/status">the status table</a> carries the rung.</p>
+</div>
+<!-- STATUS:footauth:END -->
+            <p>Every rung on this page is generated from <code>status.json</code>.</p>
+            <div class="foot-fam">
+                <span>One system, three ways in</span>
+                <span class="ff-links">
+                    <a href="https://tr.computedriven.com/">T&amp;R</a>
+                    <a href="https://super.computedriven.com">Super (CD)</a>
+                    <b>[World] Cloud</b>
+                    <a href="https://computedriven.com">computedriven.com <span aria-hidden="true">&#8599;</span></a>
+                </span>
+            </div>
+        </footer>
+
+        <script type="module" src="/amp-nav.js"></script>
+        <amp-nav property="cloud"></amp-nav>
+    </body>
+</html>

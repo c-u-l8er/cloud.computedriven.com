@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sign in — [World] Cloud</title>
+        <meta
+            name="description"
+            content="There is no sign-in yet. Keycloak identifies the subject, a portal BFF holds the session, and neither exists. What has to be true before this page becomes a door, and how you will know when it is."
+        />
+        <link rel="canonical" href="https://cloud.computedriven.com/auth" />
+        <link rel="stylesheet" href="/assets/site.css" />
+    </head>
+    <body>
+        <header class="site">
+            <div class="site-bar">
+                <a class="site-logo" href="https://computedriven.com" aria-label="ComputeDriven — the studio [World] Cloud is one of three properties of"><b>[World]</b> Cloud<span class="bto" aria-hidden="true">&#8599;</span><span class="bto bto-w" aria-hidden="true">computedriven.com</span></a>
+                <nav class="site-links" aria-label="Primary">
+                    <a href="/">Overview</a>
+                    <a href="/architecture">Architecture</a>
+                    <a href="/security">Security</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/status">Status</a>
+                </nav>
+                <!-- STATUS:authcta:BEGIN -->
+<a class="site-auth" href="/auth" aria-current="page">Sign in <span class="tag">spec</span></a>
+<!-- STATUS:authcta:END -->
+            </div>
+        </header>
+        <main>
+            <section>
+                <h1>Sign in</h1>
+                <p class="lede">
+                    You cannot. <span class="thesis">There is no sign-in here yet</span> — no
+                    realm has issued a token, no portal holds a session, and no account has
+                    ever been created against this system.
+                </p>
+
+                <!-- STATUS:banner:BEGIN -->
+<p class="banner" role="status">
+  <strong>Nothing here is deployed.</strong>
+  Of 40 capabilities, <b>24</b> run and are tested on a developer machine
+  and <b>16</b> are written down and not built.
+  <b>0</b> are serving the public.
+  <a href="/status">The full table</a> says which is which, as of 2026-08-22.
+</p>
+<!-- STATUS:banner:END -->
+
+                <p>
+                    A form on this page would work. It would take an address, show a spinner,
+                    and say something reassuring. It would also be the first lie on a site
+                    whose entire argument is that a claim carries the rung it actually stands
+                    on — so instead this page tells you what is missing, and the table below
+                    is generated from the same file the status page reads.
+                </p>
+            </section>
+
+            <section>
+                <h2>What a sign-in has to walk through</h2>
+                <p>
+                    Signing in is not one thing. It is a realm that issues a token, a server
+                    that verifies it without trusting what the token says about itself, and a
+                    resolver that turns a subject into a principal and an organization. Three
+                    of those are built and tested on a developer machine. The two that would
+                    put a door on this page are not.
+                </p>
+                <div class="scroll">
+                    <!-- STATUS:signin:BEGIN -->
+<table>
+  <caption>What a sign-in has to walk through, and where each part stands as of 2026-08-22</caption>
+  <thead>
+    <tr><th scope="col">Part</th><th scope="col">Rung</th><th scope="col">What that means here</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Keycloak realm on Fly</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>Ruled (R4) to Fly iad, database on PlanetScale. Not provisioned.</td>
+    </tr>
+    <tr>
+      <th scope="row">Portal sign-in (BFF, server session)</th>
+      <td><span class="rung rung-spec">spec</span></td>
+      <td>No portal exists.</td>
+    </tr>
+    <tr>
+      <th scope="row">OIDC token verification (RS256, pinned)</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Algorithm pinned, never read from the token; iat required, crit refused, forced JWKS refresh rate-capped. No realm has issued it a real token.</td>
+    </tr>
+    <tr>
+      <th scope="row">OIDC subject → principal → organization</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Resolvers are implemented and tested, and idempotent under CONCURRENCY as well as in sequence. The mechanism CHANGED this round: 0013 used a PostgreSQL advisory lock, which Hyperdrive lists as unsupported — correct PostgreSQL that the production wire refuses. 0015 serializes on the unique partial index instead. No Keycloak has issued a real token to them.</td>
+    </tr>
+    <tr>
+      <th scope="row">Organizations resolved by stable IdP id</th>
+      <td><span class="rung rung-local">local</span></td>
+      <td>Alias is for selection only. A token carrying aliases without ids is refused as a realm misconfiguration.</td>
+    </tr>
+  </tbody>
+</table>
+<!-- STATUS:signin:END -->
+                </div>
+                <p class="dim">
+                    <a href="/status">The full capability table</a> ·
+                    <a href="/architecture">Why the subject, the tenant and the machine are three identities</a>
+                </p>
+            </section>
+
+            <section>
+                <h2>Why the parts that exist are not enough</h2>
+                <p>
+                    Token verification is implemented and pinned — the algorithm is fixed in
+                    code and never read from the token, which is the defect that has broken
+                    more JWT deployments than any other. The subject-to-principal resolver is
+                    implemented and idempotent under concurrency, so two simultaneous first
+                    logins resolve to one principal rather than two.
+                </p>
+                <p>
+                    Both of those have been exercised only against tokens this repository
+                    minted for its own tests. <strong>No Keycloak has issued a real token to
+                    them.</strong> Code that verifies a signature correctly against a key it
+                    generated is code that has not yet met the internet, and calling that
+                    "sign-in works" is the exact move this site exists to refuse.
+                </p>
+                <p>
+                    The missing pieces are a provisioned realm — ruled to Fly iad, not built —
+                    and the portal itself, which is the server that would hold your session so
+                    a token never reaches the browser. Until both exist, the honest rung is
+                    the one printed above.
+                </p>
+            </section>
+
+            <section>
+                <h2>What happens when this page becomes a door</h2>
+                <p>
+                    Nothing on this page is hand-maintained. The rung beside <b>Sign in</b> in
+                    the header, the note in the footer of every page, and the table above are
+                    all written from <a href="/status.json"><code>status.json</code></a> by
+                    <code>tools/render-status.mjs</code>, and a release gate fails if any page
+                    disagrees with it.
+                </p>
+                <p>
+                    So the day the portal is real, this page changes because the capability
+                    changed — not because someone remembered to come back and edit seven
+                    files. That is the only version of this promise worth making.
+                </p>
+                <p class="dim">
+                    In the meantime, the thing that does exist and does run is
+                    <a href="https://super.computedriven.com">Super (CD)</a> — the local-first
+                    cockpit, on hardware you already own. It needs no account here, which is
+                    rather the point: a machine we rent you proves nothing that a machine you
+                    own does not prove better.
+                </p>
+            </section>
+
+            <nav class="pages" aria-label="Sections">
+                <a href="/">Overview</a>
+                <a href="/architecture">Architecture</a>
+                <a href="/security">Security</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/status">Status</a>
+            </nav>
+        </main>
+
+        <footer>
+            <!-- STATUS:footauth:BEGIN -->
+<div class="foot-auth">
+  <a class="foot-auth-cta" href="/auth">Sign in &rarr;</a>
+  <p class="foot-auth-note">There is no sign-in yet — <code>portal_login</code> stands at <b>spec</b>. The auth page says what has to exist before there is a door here, and <a href="/status">the status table</a> carries the rung.</p>
+</div>
+<!-- STATUS:footauth:END -->
+            <p>
+                This page is the one surface where a placeholder would have been easiest and
+                cost the most. It carries its rung like every other claim on the site.
+            </p>
+            <div class="foot-fam">
+                <span>One system, three ways in</span>
+                <span class="ff-links">
+                    <a href="https://tr.computedriven.com/">T&amp;R</a>
+                    <a href="https://super.computedriven.com">Super (CD)</a>
+                    <b>[World] Cloud</b>
+                    <a href="https://computedriven.com">computedriven.com <span aria-hidden="true">&#8599;</span></a>
+                </span>
+            </div>
+        </footer>
+
+        <script type="module" src="/amp-nav.js"></script>
+        <amp-nav property="cloud"></amp-nav>
+    </body>
+</html>
